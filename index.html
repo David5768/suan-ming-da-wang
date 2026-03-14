@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zhiyin Fortune Telling - Professional Bazi Calculator</title>
     <style>
-        /* ...你之前的全部 style 保持原样... */
         body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 0; background: #f5f5f5;}
         .container { max-width: 1200px; margin: 0 auto; padding: 20px;}
         .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 40px 0; text-align: center; border-radius: 0 0 20px 20px; margin-bottom: 40px;}
@@ -41,6 +40,11 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 768px) { .pillars { flex-direction: column; gap: 15px;} .elements-grid { grid-template-columns: 1fr; } }
+        .destiny-block { margin-bottom: 18px; padding:16px 12px; background: #f8f7fa; border-radius:5px; border-left: 4px solid #667eea;}
+        .destiny-block h4 { margin:0 0 8px 0; color:#684ba2;}
+        .age-section { margin-top: 7px; font-size: 15px; }
+        .age-section .age-title { color: #555; font-weight: bold; margin-right:8px;}
+        .age-period { margin-bottom: 4px; }
     </style>
 </head>
 <body>
@@ -50,14 +54,11 @@
             <p>Professional Bazi Calculator - Traditional Chinese Astrology</p>
         </div>
     </div>
-    
     <div class="container">
         <div class="calculator">
             <h2>Bazi Calculator</h2>
             <p>Enter your birth information to calculate your Bazi (Four Pillars of Destiny)</p>
-            
             <div class="error" id="errorMessage"></div>
-            
             <form id="baziForm" autocomplete="off">
                 <div class="form-group">
                     <label for="year">Birth Year (1900-2100)</label>
@@ -89,12 +90,10 @@
                 <button type="submit" class="btn-primary">Calculate Bazi</button>
             </form>
         </div>
-        
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>Calculating Bazi, please wait...</p>
         </div>
-        
         <div class="results" id="results">
             <h2>Bazi Analysis Results</h2>
             <div class="bazi-display">
@@ -145,123 +144,217 @@
             </div>
         </div>
     </div>
-
-    <!-- Bazi Calculation JavaScript -->
     <script>
     // 天干地支数据
     const tiangan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
     const dizhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
     const wuxingMap = { '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水' };
-    const tenGod = [ // 简易十神，对日主的关系
-      ['比肩','劫财'], // 木
-      ['食神','伤官'], // 火
-      ['偏财','正财'], // 土
-      ['七杀','正官'], // 金
-      ['偏印','正印']  // 水
-    ];
-
+    // 简易十神，仅供演示
+    function getTenGodRelation(dayStem, otherStem) {
+        const wuXing = {'甲':0,'乙':0,'丙':1,'丁':1,'戊':2,'己':2,'庚':3,'辛':3,'壬':4,'癸':4};
+        let dayType = wuXing[dayStem];
+        let otherType = wuXing[otherStem];
+        if(dayType === otherType) return '比劫';
+        if( (dayType+1)%5===otherType) return '食伤';
+        if( (dayType+2)%5===otherType) return '财富';
+        if( (dayType+3)%5===otherType) return '官杀';
+        if( (dayType+4)%5===otherType) return '印枭';
+        return '';
+    }
     // 模拟年-月-日-时干支推算（简易版）
     function getGanZhi(year, month, day, hour) {
-      let baseYear = 1900;
-      let yearDiff = year - baseYear;
-      // 年柱
-      let yearGanIdx = (6 + yearDiff) % 10;
-      let yearZhiIdx = (0 + yearDiff) % 12;
-      // 月柱（公历粗略，无节气区分）
-      let monthGanIdx = (yearGanIdx * 2 + month) % 10;
-      let monthZhiIdx = (2 + month) % 12;
-      // 日柱（简化）
-      let dayIndex = Math.floor( (yearDiff*365.25 + (month-1)*30 + day) % 60);
-      let dayGanIdx = dayIndex % 10;
-      let dayZhiIdx = dayIndex % 12;
-      // 时柱
-      let hourIndex = Math.floor((hour + 1) / 2) % 12;
-      let hourGanIdx = (dayGanIdx * 2 + hourIndex) % 10;
-      let hourZhiIdx = hourIndex;
-      return [
-        [tiangan[yearGanIdx], dizhi[yearZhiIdx]],
-        [tiangan[monthGanIdx], dizhi[monthZhiIdx]],
-        [tiangan[dayGanIdx], dizhi[dayZhiIdx]],
-        [tiangan[hourGanIdx], dizhi[hourZhiIdx]]
-      ];
+        let baseYear = 1900;
+        let yearDiff = year - baseYear;
+        let yearGanIdx = (6 + yearDiff) % 10;
+        let yearZhiIdx = (0 + yearDiff) % 12;
+        let monthGanIdx = (yearGanIdx * 2 + month) % 10;
+        let monthZhiIdx = (2 + month) % 12;
+        let dayIndex = Math.floor( (yearDiff*365.25 + (month-1)*30 + day) % 60);
+        let dayGanIdx = dayIndex % 10;
+        let dayZhiIdx = dayIndex % 12;
+        let hourIndex = Math.floor((hour + 1) / 2) % 12;
+        let hourGanIdx = (dayGanIdx * 2 + hourIndex) % 10;
+        let hourZhiIdx = hourIndex;
+        return [
+            [tiangan[yearGanIdx], dizhi[yearZhiIdx]],
+            [tiangan[monthGanIdx], dizhi[monthZhiIdx]],
+            [tiangan[dayGanIdx], dizhi[dayZhiIdx]],
+            [tiangan[hourGanIdx], dizhi[hourZhiIdx]]
+        ];
     }
-
     function getWuXingCounts(gans) {
-      let map = {'木': 0, '火': 0, '土': 0, '金': 0, '水': 0};
-      gans.forEach(([gan])=>{
-        let ele = wuxingMap[gan];
-        map[ele]++;
-      });
-      return map;
+        let map = {'木': 0, '火': 0, '土': 0, '金': 0, '水': 0};
+        gans.forEach(([gan])=>{
+            let ele = wuxingMap[gan];
+            map[ele]++;
+        });
+        return map;
     }
-
-    function getTenGodRelation(dayStem, otherStem) {
-      // 仅做结构演示，未区分阳阴，实际需看干与日主五行生克关系
-      const wuXing = {'甲':0,'乙':0,'丙':1,'丁':1,'戊':2,'己':2,'庚':3,'辛':3,'壬':4,'癸':4};
-      let dayType = wuXing[dayStem];
-      let otherType = wuXing[otherStem];
-      if(dayType === otherType) return '比劫';
-      if( (dayType+1)%5===otherType) return '食伤';//生我、我生
-      if( (dayType+2)%5===otherType) return '财富';
-      if( (dayType+3)%5===otherType) return '官杀';
-      if( (dayType+4)%5===otherType) return '印枭';
-      return '';
+    // 重要年龄分段
+    function getAgePeriods(birthYear, nowYear=2026) {
+        let base = Math.floor((nowYear-birthYear)/10);
+        // 默认输出20-60岁（可按出生年调整）
+        return [
+            [20,30],
+            [30,40],
+            [40,50],
+            [50,60]
+        ].filter(([a,b])=>birthYear+a<=nowYear);
+    }
+    // 年龄段模板文本（分板块、分五行特征，实际可扩充更多模板）
+    function makeAgeAnalysis(category, wuxing, pillars, birthYear) {
+        let periods = getAgePeriods(birthYear);
+        let lines = [];
+        periods.forEach(([a, b])=>{
+            let txt = "";
+            // 每个板块和五行的规则化分段文本，可按需求丰富
+            switch(category){
+                case "work":
+                    if(wuxing['木']>=2 && a===20) txt = "事业起步期多创新机会，宜抓住技术与学习机遇。";
+                    else if(wuxing['金']>=2 && a===30) txt = "30-40岁事业趋于稳定，管理和财力提升明显。";
+                    else if(wuxing['火']>=2 && a===40) txt = "40-50岁事业高峰，适合拓展新领域。";
+                    else if(wuxing['水']>=2 && a===50) txt = "50岁后需关注工作健康平衡，适合财富管理。";
+                    else txt = `${a}-${b}岁：事业稳中有进，需顺势而为。`;
+                    break;
+                case "wealth":
+                    if(wuxing['土']>=2 && a===20) txt = "早年善于积蓄，正财来源稳定。";
+                    else if(wuxing['金']>=2 && a===30) txt = "30-40岁间偏财运增旺，可关注机遇投资。";
+                    else if(wuxing['水']>=2 && a===40) txt = "中年略有波折，但贵在理性理财。";
+                    else txt = `${a}-${b}岁：财运温和平稳，重视收支。`;
+                    break;
+                case "love":
+                    if(['子','午','卯','酉'].some(zhi=>pillars.map(p=>p[1]).includes(zhi)) && a===20) txt = "青年期桃花旺，易有良缘遇合。";
+                    else if(wuxing['水']>=2 && a===30) txt = "30后情感更细腻，恋爱运持续升温。";
+                    else if(wuxing['金']>=2 && a===40) txt = "40岁后重视家人陪伴，情感趋于稳定。";
+                    else txt = `${a}-${b}岁：感情随缘发展，注意沟通。`;
+                    break;
+                case "health":
+                    if(wuxing['火']===0 && a===20) txt = "青年期注意心血管健康，适当锻炼提升体魄。";
+                    else if(wuxing['木']===0 && a===30) txt = "三十岁左右关注肝胆和神经系统。";
+                    else if(wuxing['水']===0 && a===40) txt = "40岁后须防肾及泌尿系统隐患。";
+                    else txt = `${a}-${b}岁：身体状况较平顺，注意均衡饮食作息。`;
+                    break;
+                case "child":
+                    if(a===30) txt = "30岁以后子女运转顺，有生育或添丁机会。";
+                    else if(a===40) txt = "40以后注重子女教育和家庭关系，亲子关系和谐。";
+                    else txt = `${a}-${b}岁：子女与家庭和睦进展。`;
+                    break;
+            }
+            lines.push(`<div class="age-period"><span class="age-title">${a}-${b}岁：</span>${txt}</div>`);
+        });
+        return `<div class="age-section">${lines.join("")}</div>`;
+    }
+    // 综合命理解读（每板块带年龄段）
+    function generateDestinyInterpretation(pillars, wuxing, gender, birthYear) {
+        const stems = pillars.map(p=>p[0]);
+        const branches = pillars.map(p=>p[1]);
+        const blocks = [];
+        // 1. 事业
+        let work = "";
+        if(wuxing['木']>=2) work = "事业以创新和成长为主，适合教育、科技、文化等领域，易得贵人。";
+        else if(wuxing['金']>=2) work = "事业重视管理秩序，适��金融、司法、咨询类岗位。";
+        else if(wuxing['火']>=2) work = "事业充满活力，适合市场、传播、艺术等。";
+        else if(wuxing['土']>=2) work = "职业稳定务实，适合地产、农业等行业。";
+        else if(wuxing['水']>=2) work = "事业变通应变力强，适合贸易、物流、旅游等领域。";
+        else work = "事业发展稳健，贵在多元积累。";
+        work += makeAgeAnalysis("work", wuxing, pillars, birthYear);
+        blocks.push(`<div class="destiny-block"><h4>事业运分析</h4>${work}</div>`);
+        // 2. 财运
+        let caiyun = "";
+        if (pillars.map(p=>p[0]).includes("财") || pillars.map(p=>p[1]).includes("财") || wuxing['土']>=2) {
+            caiyun = "命理中财星较旺，宜把握理财机会，警惕冒进投资。";
+        } else if (wuxing['金']>=2 || wuxing['水']>=2) {
+            caiyun = "金水较足，正偏财皆有，可多关注机遇和副业。";
+        } else {
+            caiyun = "财运温和，宜积累为主，勿贪捷径。";
+        }
+        caiyun += makeAgeAnalysis("wealth", wuxing, pillars, birthYear);
+        blocks.push(`<div class="destiny-block"><h4>财运分析</h4>${caiyun}</div>`);
+        // 3. 桃花
+        let taohua = "";
+        if(['子','午','卯','酉'].some(zhi=>branches.includes(zhi))) {
+            taohua = "八字具桃花星，人缘佳，感情机遇多，需把握分寸。";
+        } else if (wuxing['水']>=2 || wuxing['火']>=2) {
+            taohua = "命局水火旺，为人热情，感情变化较多。";
+        } else {
+            taohua = "感情谨慎随缘，多提升自身吸引力。";
+        }
+        taohua += makeAgeAnalysis("love", wuxing, pillars, birthYear);
+        blocks.push(`<div class="destiny-block"><h4>桃花/感情分析</h4>${taohua}</div>`);
+        // 4. 健康
+        let health = "";
+        if(wuxing['火'] === 0) health = "八字火弱，宜关注心脏血液体系，适度运动。";
+        else if(wuxing['水'] === 0) health = "水弱，注意肾脏和睡眠质量。";
+        else if(wuxing['木'] === 0) health = "木弱，保养肝胆神经。";
+        else if(wuxing['金'] === 0) health = "金弱，注意呼吸道、皮肤。";
+        else if(wuxing['土'] === 0) health = "土弱，胃肠易感，应调整饮食作息。";
+        else health = "五��均衡，健康基础良好，坚持锻炼效果更佳。";
+        health += makeAgeAnalysis("health", wuxing, pillars, birthYear);
+        blocks.push(`<div class="destiny-block"><h4>健康分析</h4>${health}</div>`);
+        // 5. 子女
+        let child = "";
+        if(gender==='male' && stems[3]==='庚') {
+            child = "男命时干庚金，子女多聪慧，擅管理。";
+        } else if(gender==='female' && ['丁','己','辛'].includes(stems[3])){
+            child = "女性时柱丁己辛，子女多温和孝顺。";
+        } else if(wuxing['土']>=2){
+            child = "土为子星，子女勤恳，可安家立业。";
+        } else {
+            child = "子女运尚可，家庭和顺。";
+        }
+        child += makeAgeAnalysis("child", wuxing, pillars, birthYear);
+        blocks.push(`<div class="destiny-block"><h4>子女分析</h4>${child}</div>`);
+        // 6. 温馨说明
+        blocks.push(`<div class="destiny-block"><h4>温馨提示</h4>当前八字排盘采用西历简化推算，与农历节气有差异，仅供娱乐体验。如需更专业详批，请咨询专业命理师。</div>`);
+        return blocks.join('');
     }
 
     document.getElementById('baziForm').onsubmit = function(e) {
-      e.preventDefault();
-      // 隐藏旧结果
-      document.getElementById('results').classList.remove('show');
-      document.getElementById('errorMessage').classList.remove('show');
-      document.getElementById('loading').classList.add('show');
-    
-      setTimeout(function() { // 假装后台推算
-        let y = Number(document.getElementById('year').value),
-            m = Number(document.getElementById('month').value),
-            d = Number(document.getElementById('day').value),
-            h = Number(document.getElementById('hour').value),
-            gender = document.getElementById('gender').value;
-        if(!y || !m || !d || !h) {
-          document.getElementById('loading').classList.remove('show');
-          document.getElementById('errorMessage').classList.add('show');
-          document.getElementById('errorMessage').innerText = 'Please fill out all fields!';
-          return false;
-        }
-        if(y<1900||y>2100||m<1||m>12||d<1||d>31||h<0||h>23) {
-          document.getElementById('loading').classList.remove('show');
-          document.getElementById('errorMessage').classList.add('show');
-          document.getElementById('errorMessage').innerText = 'Invalid date or hour range!';
-          return false;
-        }
-        // 计算八字
-        let pillars = getGanZhi(y, m, d, h);
-        // 填充四柱
-        document.getElementById('yearPillar').innerText = pillars[0][0]+pillars[0][1];
-        document.getElementById('monthPillar').innerText = pillars[1][0]+pillars[1][1];
-        document.getElementById('dayPillar').innerText = pillars[2][0]+pillars[2][1];
-        document.getElementById('hourPillar').innerText = pillars[3][0]+pillars[3][1];
-        document.getElementById('fullBazi').innerText = pillars.map(p=>p[0]+p[1]).join(' | ');
-        // 五行统计
-        let wuxings = getWuXingCounts(pillars);
-        let grid = Object.entries(wuxings).map(([ele, count])=>`<div class="element-item"><b>${ele}</b><br>${count}</div>`).join('');
-        document.getElementById('elementsGrid').innerHTML = grid;
-        // 十神关系（极为简化）
-        let tenGodsTable = "";
-        let dayStem = pillars[2][0];
-        for(let i=0;i<4;i++){
-          let pillar = ['Year','Month','Day','Hour'][i];
-          let gan = pillars[i][0], zhi = pillars[i][1], ele = wuxingMap[gan]||'';
-          tenGodsTable += `<tr><td>${pillar}</td><td>${gan}</td><td>${zhi}</td><td>${ele}</td><td>${getTenGodRelation(dayStem, gan)}</td></tr>`;
-        }
-        document.querySelector("#tenGodsTable tbody").innerHTML = tenGodsTable;
-
-        // 命理解读
-        document.getElementById('interpretation').innerHTML =
-          "（温馨提示：当前八字排盘采用西历简化推算。五行、十神关系与农历节气有差异。仅供娱乐体验。如要更专业详批，可进一步咨询专业命理师。）";
-
-        document.getElementById('loading').classList.remove('show');
-        document.getElementById('results').classList.add('show');
-      }, 500);
+        e.preventDefault();
+        document.getElementById('results').classList.remove('show');
+        document.getElementById('errorMessage').classList.remove('show');
+        document.getElementById('loading').classList.add('show');
+        setTimeout(function() {
+            let y = Number(document.getElementById('year').value),
+                m = Number(document.getElementById('month').value),
+                d = Number(document.getElementById('day').value),
+                h = Number(document.getElementById('hour').value),
+                gender = document.getElementById('gender').value;
+            if(!y || !m || !d || !h) {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('errorMessage').classList.add('show');
+                document.getElementById('errorMessage').innerText = 'Please fill out all fields!';
+                return false;
+            }
+            if(y<1900||y>2100||m<1||m>12||d<1||d>31||h<0||h>23) {
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('errorMessage').classList.add('show');
+                document.getElementById('errorMessage').innerText = 'Invalid date or hour range!';
+                return false;
+            }
+            let pillars = getGanZhi(y, m, d, h);
+            document.getElementById('yearPillar').innerText = pillars[0][0]+pillars[0][1];
+            document.getElementById('monthPillar').innerText = pillars[1][0]+pillars[1][1];
+            document.getElementById('dayPillar').innerText = pillars[2][0]+pillars[2][1];
+            document.getElementById('hourPillar').innerText = pillars[3][0]+pillars[3][1];
+            document.getElementById('fullBazi').innerText = pillars.map(p=>p[0]+p[1]).join(' | ');
+            let wuxings = getWuXingCounts(pillars);
+            let grid = Object.entries(wuxings).map(([ele, count])=>`<div class="element-item"><b>${ele}</b><br>${count}</div>`).join('');
+            document.getElementById('elementsGrid').innerHTML = grid;
+            // 十神
+            let tenGodsTable = "";
+            let dayStem = pillars[2][0];
+            for(let i=0;i<4;i++){
+                let pillar = ['Year','Month','Day','Hour'][i];
+                let gan = pillars[i][0], zhi = pillars[i][1], ele = wuxingMap[gan]||'';
+                tenGodsTable += `<tr><td>${pillar}</td><td>${gan}</td><td>${zhi}</td><td>${ele}</td><td>${getTenGodRelation(dayStem, gan)}</td></tr>`;
+            }
+            document.querySelector("#tenGodsTable tbody").innerHTML = tenGodsTable;
+            // 综合板块解读
+            document.getElementById('interpretation').innerHTML = generateDestinyInterpretation(pillars, wuxings, gender, y);
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('results').classList.add('show');
+        }, 450);
     };
     </script>
 </body>
