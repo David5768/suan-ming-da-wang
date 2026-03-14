@@ -1,0 +1,6 @@
+# GitHub Pages Configuration
+title: "Zhiyin Fortune Telling"
+description: "Professional Bazi Calculator - Traditional Chinese Astrology"
+baseurl: ""
+url: "https://zhiyingsuanming.github.io"
+theme: jekyll-theme-minimal

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zhiyin Fortune Telling - Professional Bazi Calculator</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        
+        .calculator {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .calculator h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.3s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+        }
+        
+        .results {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .bazi-display {
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .pillars {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .pillar {
+            text-align: center;
+        }
+        
+        .pillar-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .pillar-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .analysis-section {
+            margin-bottom: 30px;
+        }
+        
+        .analysis-section h3 {
+            color: #667eea;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        .elements-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .element-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c00;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error.show {
+            display: block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .pillars {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .elements-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Zhiyin Fortune Telling</h1>
+            <p>Professional Bazi Calculator - Traditional Chinese Astrology</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="calculator">
+            <h2>Bazi Calculator</h2>
+            <p>Enter your birth information to calculate your Bazi (Four Pillars of Destiny)</p>
+            
+            <div class="error" id="errorMessage"></div>
+            
+            <form id="baziForm">
+                <div class="form-group">
+                    <label for="year">Birth Year (1900-2100)</label>
+                    <input type="number" id="year" class="form-control" min="1900" max="2100" value="1990" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="month">Birth Month (1-12)</label>
+                    <input type="number" id="month" class="form-control" min="1" max="12" value="5" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="day">Birth Day (1-31)</label>
+                    <input type="number" id="day" class="form-control" min="1" max="31" value="15" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="hour">Birth Hour (0-23)</label>
+                    <input type="number" id="hour" class="form-control" min="0" max="23" value="14" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="minute">Birth Minute (0-59)</label>
+                    <input type="number" id="minute" class="form-control" min="0" max="59" value="30" required>
+                </div>
+                
+                <button type="submit" class="btn-primary">
+                    Calculate Bazi
+                </button>
+            </form>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Calculating Bazi, please wait...</p>
+        </div>
+        
+        <div class="results" id="results">
+            <h2>Bazi Analysis Results</h2>
+            
+            <div class="bazi-display">
+                <div class="pillars">
+                    <div class="pillar">
+                        <div class="pillar-label">Year Pillar</div>
+                        <div class="pillar-value" id="yearPillar">--</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-label">Month Pillar</div>
+                        <div class="pillar-value" id="monthPillar">--</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-label">Day Pillar</div>
+                        <div class="pillar-value" id="dayPillar">--</div>
+                    </div>
+                    <div class="pillar">
+                        <div class="pillar-label">Hour Pillar</div>
+                        <div class="pillar-value" id="hourPillar">--</div>
+                    </div>
+                </div>
+                <p>Complete Bazi: <span id="fullBazi">---- ---- ---- ----</span></p>
+            </div>
+            
+            <div class="analysis-section">
+                <h3>Five Elements Analysis</h3>
+                <div class="elements-grid" id="elementsGrid">
+                    <!-- Elements will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="analysis-section">
+                <h3>Ten Gods Analysis</h3>
+                <table id="tenGodsTable">
+                    <thead>
+                        <tr>
+                            <th>Pillar</th>
+                            <th>Stem</th>
+                            <th>Branch</th>
+                            <th>Element</th>
+                            <th>Ten God</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Ten Gods data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="analysis-section">
+                <h3>Destiny Interpretation</h3>
+                <div id="interpretation">
+                    <!-- Interpretation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
