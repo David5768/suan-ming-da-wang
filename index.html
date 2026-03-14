@@ -45,6 +45,10 @@
         .age-section { margin-top: 7px; font-size: 15px; }
         .age-section .age-title { color: #555; font-weight: bold; margin-right:8px;}
         .age-period { margin-bottom: 4px; }
+        /* 财运走势图样式 */
+        .wealth-plot-container {margin: 18px 0 8px 0; padding: 10px;background:#f2f6ff; border-radius:5px;}
+        #wealthChart { width: 100%; max-width: 460px; height: 110px;}
+        .wealth-plot-caption { text-align:center; color: #555; font-size:14px;margin-bottom:6px;}
     </style>
 </head>
 <body>
@@ -145,11 +149,10 @@
         </div>
     </div>
     <script>
-    // 天干地支数据
+    // 基础资料
     const tiangan = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
     const dizhi = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
     const wuxingMap = { '甲':'木', '乙':'木', '丙':'火', '丁':'火', '戊':'土', '己':'土', '庚':'金', '辛':'金', '壬':'水', '癸':'水' };
-    // 简易十神，仅供演示
     function getTenGodRelation(dayStem, otherStem) {
         const wuXing = {'甲':0,'乙':0,'丙':1,'丁':1,'戊':2,'己':2,'庚':3,'辛':3,'壬':4,'癸':4};
         let dayType = wuXing[dayStem];
@@ -161,7 +164,6 @@
         if( (dayType+4)%5===otherType) return '印枭';
         return '';
     }
-    // 模拟年-月-日-时干支推算（简易版）
     function getGanZhi(year, month, day, hour) {
         let baseYear = 1900;
         let yearDiff = year - baseYear;
@@ -190,10 +192,7 @@
         });
         return map;
     }
-    // 重要年龄分段
     function getAgePeriods(birthYear, nowYear=2026) {
-        let base = Math.floor((nowYear-birthYear)/10);
-        // 默认输出20-60岁（可按出生年调整）
         return [
             [20,30],
             [30,40],
@@ -201,112 +200,167 @@
             [50,60]
         ].filter(([a,b])=>birthYear+a<=nowYear);
     }
-    // 年龄段模板文本（分板块、分五行特征，实际可扩充更多模板）
+
+    // 财运走势图数据与注解算法
+    function simulateWealthTrend(wuxing, pillars){
+        // 模拟财运波动：五行偏强则某段高，出现“子、丑、巳、午”为波动点
+        let stages = ["20-30","30-40","40-50","50-60"], vals = [], notes=[];
+        let sum = ["木","火","土","金","水"].map(k=>wuxing[k]).reduce((a,b)=>a+b,0);
+        let normal = Math.max(1, sum / 5);
+        stages.forEach((stage,i)=>{
+            let v = normal + Math.random()*0.2;
+            if(wuxing["金"]>=2 && i===1) {v+=.5; notes.push([i,"30-40岁财星透出，正财偏财均旺盛。"]);}
+            if(wuxing["土"]>=2 && (i===0||i==3)){v+=.35; notes.push([i,`${stage}求财踏实，适合积累型理财。`]); }
+            if(wuxing["水"]===0 && i===2) {v-=.3; notes.push([i,"40-50岁水弱防财流失，宜谨慎支出。"]);}
+            if(["子","午","丑","巳"].some(z=>pillars.map(p=>p[1]).includes(z)) && i===2){
+                v+=.25; notes.push([i,"人生转折期遇财运转好，抓住机遇可获突破。"]);
+            }
+            vals.push(Math.max(0.5,v));
+        });
+        // 归一化到(1~4)
+        let min = Math.min(...vals), max = Math.max(...vals), range = Math.max(1,max-min);
+        let scaled = vals.map(x=>1+(x-min)*3/range);
+        return {stages, values: scaled, notes};
+    }
+
+    function drawWealthChart(canvasId, stages, values){
+        const cvs = document.getElementById(canvasId);
+        if(!cvs) return;
+        let ctx = cvs.getContext('2d');
+        ctx.clearRect(0,0,cvs.width,cvs.height);
+        let w = cvs.width, h = cvs.height, n = values.length;
+        // 坐标轴
+        ctx.strokeStyle="#678be2"; ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.moveTo(42,h-30); ctx.lineTo(410,h-30); ctx.moveTo(42,10); ctx.lineTo(42,h-30);
+        ctx.stroke();
+        // 曲线
+        ctx.strokeStyle="#e06cb9"; ctx.lineWidth=2.6; ctx.beginPath();
+        values.forEach((val,i)=>{
+            let x = 42+i*((410-42)/(n-1)), y = h-30-(val-1)*(h-50)/3.3;
+            if(i===0) ctx.moveTo(x,y);
+            else ctx.lineTo(x,y);
+        }); ctx.stroke();
+        // 节点
+        values.forEach((val,i)=>{
+            let x = 42+i*((410-42)/(n-1)), y = h-30-(val-1)*(h-50)/3.3;
+            ctx.beginPath(); ctx.arc(x,y,4,0,2*Math.PI); ctx.fillStyle="#e06cb9"; ctx.fill();
+            ctx.fillStyle="#666"; ctx.font = "12px Arial";
+            ctx.fillText(stages[i], x-22, h-10);
+        });
+        // Y轴极值
+        ctx.fillStyle="#444"; ctx.font="12px Arial"; ctx.fillText("低", 18, h-28);
+        ctx.fillText("高", 15, 19);
+    }
+
+    // 年龄段算法（分板块+智能分析）
     function makeAgeAnalysis(category, wuxing, pillars, birthYear) {
         let periods = getAgePeriods(birthYear);
         let lines = [];
-        periods.forEach(([a, b])=>{
+        periods.forEach(([a, b], idx)=>{
             let txt = "";
-            // 每个板块和五行的规则化分段文本，可按需求丰富
+            // 多维策略和警示建议
             switch(category){
                 case "work":
-                    if(wuxing['木']>=2 && a===20) txt = "事业起步期多创新机会，宜抓住技术与学习机遇。";
-                    else if(wuxing['金']>=2 && a===30) txt = "30-40岁事业趋于稳定，管理和财力提升明显。";
-                    else if(wuxing['火']>=2 && a===40) txt = "40-50岁事业高峰，适合拓展新领域。";
-                    else if(wuxing['水']>=2 && a===50) txt = "50岁后需关注工作健康平衡，适合财富管理。";
-                    else txt = `${a}-${b}岁：事业稳中有进，需顺势而为。`;
+                    if(wuxing['金']>=2 && a===30) txt = "此期间适合提升管理与技术能力，谋求晋升。";
+                    else if(wuxing['木']>=2 && a==20) txt = "多拓展新领域，宜不断学习进修，为后续发展打基础。";
+                    else if(wuxing['火']>=2 && (a==30||a==40)) txt = "冲劲十足，利于自主创业，但需防决策失误。";
+                    else if(wuxing['土']>=2 && a>=40) txt = "四十岁后事业趋于稳定，但勿因保守错失机会。";
+                    else txt = `${a}-${b}岁：持续提升自我与适应能力，积累人脉资源。`;
                     break;
                 case "wealth":
-                    if(wuxing['土']>=2 && a===20) txt = "早年善于积蓄，正财来源稳定。";
-                    else if(wuxing['金']>=2 && a===30) txt = "30-40岁间偏财运增旺，可关注机遇投资。";
-                    else if(wuxing['水']>=2 && a===40) txt = "中年略有波折，但贵在理性理财。";
-                    else txt = `${a}-${b}岁：财运温和平稳，重视收支。`;
+                    if(wuxing['金']>=2 && a==30) txt = "投资方向可重视房地产与黄金，注意合理分配资产。";
+                    else if(wuxing['水']>=2 && a==40) txt = "婚姻/合作可带来财富增长，留心合同问题。";
+                    else if(wuxing['火']===0 && a>=20) txt = "财运增长慢，适合稳健理财，避免重大风险敞口。";
+                    else if(wuxing['土']>=2 && (a==20||a==50)) txt = "积蓄为王，副业可逐步起步。";
+                    else txt = `${a}-${b}岁：财务需细致规划，可请专业人士协助指导。`;
                     break;
                 case "love":
-                    if(['子','午','卯','酉'].some(zhi=>pillars.map(p=>p[1]).includes(zhi)) && a===20) txt = "青年期桃花旺，易有良缘遇合。";
-                    else if(wuxing['水']>=2 && a===30) txt = "30后情感更细腻，恋爱运持续升温。";
-                    else if(wuxing['金']>=2 && a===40) txt = "40岁后重视家人陪伴，情感趋于稳定。";
-                    else txt = `${a}-${b}岁：感情随缘发展，注意沟通。`;
+                    if(['子','午','卯','酉'].some(zhi=>pillars.map(p=>p[1]).includes(zhi)) && a===20) txt = "桃花旺盛，需分辨真缘与诱惑，避免情感纠葛。";
+                    else if(wuxing['水']>=2 && a==30) txt = "感情经历曲折后趋于稳定，可遇正缘。";
+                    else if(wuxing['金']>=2 && a>=40) txt = "此阶段注重家庭生活质量，与伴侣互动增多。";
+                    else txt = `${a}-${b}岁：保持沟通，营造和谐美满关系环境。`;
                     break;
                 case "health":
-                    if(wuxing['火']===0 && a===20) txt = "青年期注意心血管健康，适当锻炼提升体魄。";
-                    else if(wuxing['木']===0 && a===30) txt = "三十岁左右关注肝胆和神经系统。";
-                    else if(wuxing['水']===0 && a===40) txt = "40岁后须防肾及泌尿系统隐患。";
-                    else txt = `${a}-${b}岁：身体状况较平顺，注意均衡饮食作息。`;
+                    if(wuxing['火']===0 && a<=40) txt = "注意慢性疲劳及血液循环问题，忌久坐多思。";
+                    else if(wuxing['木']===0 && a>=20) txt = "视力、神经及肝胆保养为重，中医调理有益。";
+                    else if(wuxing['水']===0 && a>=40) txt = "警惕肾结石、血压波动，保持运动与充足休息。";
+                    else txt = `${a}-${b}岁：健康大致平稳，恶习需尽早戒除。`;
                     break;
                 case "child":
-                    if(a===30) txt = "30岁以后子女运转顺，有生育或添丁机会。";
-                    else if(a===40) txt = "40以后注重子女教育和家庭关系，亲子关系和谐。";
-                    else txt = `${a}-${b}岁：子女与家庭和睦进展。`;
+                    if(pillars[3][0]==='庚' && a==30) txt = "三十出头宜有贵子之兆，注意亲子沟通。";
+                    else if(wuxing['土']>=2 && a>=40) txt = "子女求学与职场均有进展，亲情关系紧密。";
+                    else txt = `${a}-${b}岁：保持家庭和谐，关注子女成长环境。`;
                     break;
             }
             lines.push(`<div class="age-period"><span class="age-title">${a}-${b}岁：</span>${txt}</div>`);
         });
         return `<div class="age-section">${lines.join("")}</div>`;
     }
-    // 综合命理解读（每板块带年龄段）
-    function generateDestinyInterpretation(pillars, wuxing, gender, birthYear) {
+
+    function generateDestinyInterpretation(pillars, wuxing, gender, birthYear, wealthTrend) {
         const stems = pillars.map(p=>p[0]);
         const branches = pillars.map(p=>p[1]);
-        const blocks = [];
-        // 1. 事业
+        // 事业
         let work = "";
-        if(wuxing['木']>=2) work = "事业以创新和成长为主，适合教育、科技、文化等领域，易得贵人。";
-        else if(wuxing['金']>=2) work = "事业重视管理秩序，适��金融、司法、咨询类岗位。";
-        else if(wuxing['火']>=2) work = "事业充满活力，适合市场、传播、艺术等。";
-        else if(wuxing['土']>=2) work = "职业稳定务实，适合地产、农业等行业。";
-        else if(wuxing['水']>=2) work = "事业变通应变力强，适合贸易、物流、旅游等领域。";
-        else work = "事业发展稳健，贵在多元积累。";
-        work += makeAgeAnalysis("work", wuxing, pillars, birthYear);
-        blocks.push(`<div class="destiny-block"><h4>事业运分析</h4>${work}</div>`);
-        // 2. 财运
+        if(wuxing['木']>=2) work= "事业格局较高，善于突破瓶颈，团队合作中常成灵魂人物，但勿好高骛远。";
+        else if(wuxing['金']>=2) work ="敢于竞争，办事严谨果断，易成为行业骨干，但忌刚愎自用，宜适度妥协。";
+        else if(wuxing['土']>=2) work = "踏实守信，为人可靠，中年以后事业晋升明显，宜防僵化保守。";
+        else if(wuxing['火']>=2) work = "精力充沛、表达力强，宜向外发展，但要警惕浮躁。";
+        else if(wuxing['水']>=2) work ="随机应变，擅用智慧生财，合适多元化发展，防止目标分散。";
+        else work = "职业路径需多探索，积极借力外界资源。";
+        work += makeAgeAnalysis("work",wuxing,pillars,birthYear);
+        // 财运 板块
         let caiyun = "";
-        if (pillars.map(p=>p[0]).includes("财") || pillars.map(p=>p[1]).includes("财") || wuxing['土']>=2) {
-            caiyun = "命理中财星较旺，宜把握理财机会，警惕冒进投资。";
-        } else if (wuxing['金']>=2 || wuxing['水']>=2) {
-            caiyun = "金水较足，正偏财皆有，可多关注机遇和副业。";
-        } else {
-            caiyun = "财运温和，宜积累为主，勿贪捷径。";
+        if(wuxing['金']>=3) caiyun="偏财正财皆旺，适合自主创业或投资，多抓行业波动机会，可获丰厚回报。防炒作风险。";
+        else if(wuxing['土']>=3) caiyun="财富累积多靠主业和土地型资产，赚钱节奏相对缓慢但持久。切勿参与投机。";
+        else if(branches.includes("卯")) caiyun="遇卯木财星年略有突发财机，注意守成，不宜冒进。";
+        else if(wuxing['水']>=2 && branches.includes("子")) caiyun="易得意外之财，但也伴有破耗，理性对待博彩、投资。";
+        else caiyun="财源平稳，适合长期理财方案。";
+        caiyun += '<div class="wealth-plot-container"><div class="wealth-plot-caption">财运趋势图</div><canvas id="wealthChart" width="460" height="110"></canvas></div>';
+        if(wealthTrend && wealthTrend.notes.length>0) {
+            caiyun += '<div style="font-size:13px;color:#4b375a;">';
+            wealthTrend.notes.forEach(([idx,nt])=>{
+                caiyun += `<div style="margin-bottom:3px;">${wealthTrend.stages[idx]}：${nt}</div>`;
+            });
+            caiyun += "</div>";
         }
-        caiyun += makeAgeAnalysis("wealth", wuxing, pillars, birthYear);
-        blocks.push(`<div class="destiny-block"><h4>财运分析</h4>${caiyun}</div>`);
-        // 3. 桃花
+        caiyun += makeAgeAnalysis("wealth",wuxing,pillars,birthYear);
+        // 桃花
         let taohua = "";
-        if(['子','午','卯','酉'].some(zhi=>branches.includes(zhi))) {
-            taohua = "八字具桃花星，人缘佳，感情机遇多，需把握分寸。";
-        } else if (wuxing['水']>=2 || wuxing['火']>=2) {
-            taohua = "命局水火旺，为人热情，感情变化较多。";
-        } else {
-            taohua = "感情谨慎随缘，多提升自身吸引力。";
-        }
-        taohua += makeAgeAnalysis("love", wuxing, pillars, birthYear);
-        blocks.push(`<div class="destiny-block"><h4>桃花/感情分析</h4>${taohua}</div>`);
-        // 4. 健康
+        if(['子','午','卯','酉'].some(zhi=>branches.includes(zhi))) taohua="天生自带人缘光芒，恋爱起伏较大，需把握关键节点。";
+        else if(wuxing['火']>=2 && wuxing['水']>=2) taohua="水火俱强，情感热烈大胆，同时需防情绪化和第三者干扰。";
+        else if(gender==='male'&&stems[1]==='丙') taohua="男性月干见丙，早年易遇良缘，勿失自信。";
+        else if(gender==='female'&&stems[1]==='丁') taohua="女性月干丁火，宜主动追爱，真诚收获幸福。";
+        else taohua="感情易循序渐进，宜理性择偶，防被动拖延。";
+        taohua += makeAgeAnalysis("love",wuxing,pillars,birthYear);
+        // 健康
         let health = "";
-        if(wuxing['火'] === 0) health = "八字火弱，宜关注心脏血液体系，适度运动。";
-        else if(wuxing['水'] === 0) health = "水弱，注意肾脏和睡眠质量。";
-        else if(wuxing['木'] === 0) health = "木弱，保养肝胆神经。";
-        else if(wuxing['金'] === 0) health = "金弱，注意呼吸道、皮肤。";
-        else if(wuxing['土'] === 0) health = "土弱，胃肠易感，应调整饮食作息。";
-        else health = "五��均衡，健康基础良好，坚持锻炼效果更佳。";
-        health += makeAgeAnalysis("health", wuxing, pillars, birthYear);
-        blocks.push(`<div class="destiny-block"><h4>健康分析</h4>${health}</div>`);
-        // 5. 子女
-        let child = "";
-        if(gender==='male' && stems[3]==='庚') {
-            child = "男命时干庚金，子女多聪慧，擅管理。";
-        } else if(gender==='female' && ['丁','己','辛'].includes(stems[3])){
-            child = "女性时柱丁己辛，子女多温和孝顺。";
-        } else if(wuxing['土']>=2){
-            child = "土为子星，子女勤恳，可安家立业。";
-        } else {
-            child = "子女运尚可，家庭和顺。";
-        }
-        child += makeAgeAnalysis("child", wuxing, pillars, birthYear);
-        blocks.push(`<div class="destiny-block"><h4>子女分析</h4>${child}</div>`);
-        // 6. 温馨说明
-        blocks.push(`<div class="destiny-block"><h4>温馨提示</h4>当前八字排盘采用西历简化推算，与农历节气有差异，仅供娱乐体验。如需更专业详批，请咨询专业命理师。</div>`);
-        return blocks.join('');
+        if(wuxing['火']===0) health="火气偏弱，需关注心脏、血液循环相关疾病，养成晨练习惯有益改善。";
+        else if(wuxing['水']===0) health="水源亏损，当重视肾脏和泌尿系统与压力管理，夜间勿用脑过度。";
+        else if(wuxing['木']===0) health="木弱者多神经紧张，易有肝胆失调，推荐多亲近自然减压。";
+        else if(wuxing['金']===0) health="金薄易感冒和咽喉不适，平衡膳食、多饮温开水为好。";
+        else if(wuxing['土']===0) health="注意脾胃胃肠养护，饮食需有度，勿暴饮暴食。";
+        else health="五行调和，整体健康素质良好，保持习惯必有长寿之象。";
+        health += makeAgeAnalysis("health",wuxing,pillars,birthYear);
+        // 子女
+        let child="";
+        if(gender==='male'&&stems[3]==='庚') child="男命时干庚金，晚育子女聪慧，父子交流尤需耐心。";
+        else if(gender==='female'&&['丁','己','辛'].includes(stems[3])) child="女性若时柱见丁、己、辛，子女温柔孝顺，同时天资灵敏。";
+        else if(branches.includes('子')) child="‘子’为子星，得子女之福，陪伴多乐趣。";
+        else if(wuxing['土']>=2) child = "土为孕星，子女生来有责任心，孝行可嘉。";
+        else child="子女缘分尚可，家中与子女互动和隆，宜重视品质教育。";
+        child += makeAgeAnalysis("child",wuxing,pillars,birthYear);
+        // 温馨提示
+        let tip = '<div class="destiny-block"><h4>温馨提示</h4>本八字推演基于四柱五行关系，呈现简化趋势分析，仅供娱乐体验；遇人生关键建议请结合实际求助专业命理师。</div>';
+        return [
+            `<div class="destiny-block"><h4>事业运分析</h4>${work}</div>`,
+            `<div class="destiny-block"><h4>财运分析</h4>${caiyun}</div>`,
+            `<div class="destiny-block"><h4>桃花/感情分析</h4>${taohua}</div>`,
+            `<div class="destiny-block"><h4>健康分析</h4>${health}</div>`,
+            `<div class="destiny-block"><h4>子女分析</h4>${child}</div>`,
+            tip
+        ].join('');
     }
 
     document.getElementById('baziForm').onsubmit = function(e) {
@@ -350,8 +404,12 @@
                 tenGodsTable += `<tr><td>${pillar}</td><td>${gan}</td><td>${zhi}</td><td>${ele}</td><td>${getTenGodRelation(dayStem, gan)}</td></tr>`;
             }
             document.querySelector("#tenGodsTable tbody").innerHTML = tenGodsTable;
-            // 综合板块解读
-            document.getElementById('interpretation').innerHTML = generateDestinyInterpretation(pillars, wuxings, gender, y);
+            // 财运走势图
+            let wealthTrend = simulateWealthTrend(wuxings, pillars);
+            document.getElementById('interpretation').innerHTML = generateDestinyInterpretation(pillars,wuxings,gender,y,wealthTrend);
+            setTimeout(()=>{
+              drawWealthChart("wealthChart", wealthTrend.stages, wealthTrend.values);
+            },30);
             document.getElementById('loading').classList.remove('show');
             document.getElementById('results').classList.add('show');
         }, 450);
