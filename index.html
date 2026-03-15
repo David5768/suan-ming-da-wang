@@ -1421,39 +1421,209 @@ window.saveCurrentToFavorites = function() {
             };
             
             // ---------- 双人合盘 ----------
-            window.toggleDualMode = function() {
-                const container = document.getElementById('dualModeContainer');
-                container.style.display = container.style.display === 'none' ? 'block' : 'none';
-            };
-            
-            window.calculateDual = function() {
+window.calculateDual = function() {
     try {
-        const year3 = parseInt(document.getElementById('year3').value);
-        const month3 = parseInt(document.getElementById('month3').value);
-        const day3 = parseInt(document.getElementById('day3').value);
-        const hour3 = parseInt(document.getElementById('hour3').value);
-        const minute3 = parseInt(document.getElementById('minute3').value);
-        const city3 = document.getElementById('city3').value;
-        const gender3 = document.getElementById('gender3').value;
+        // 显示加载状态
+        document.getElementById('dualAnalysis').innerHTML = '<p style="text-align:center;">🔮 正在合盘中...</p>';
+        document.getElementById('dualResult').style.display = 'block';
         
-        if (isNaN(year3) || isNaN(month3) || isNaN(day3)) {  // ← 改为 year3, month3, day3
+        // 获取命主一的数据（当前主排盘）
+        const data1 = {
+            year: parseInt(document.getElementById('year').value),
+            month: parseInt(document.getElementById('month').value),
+            day: parseInt(document.getElementById('day').value),
+            hour: parseInt(document.getElementById('hour').value),
+            minute: parseInt(document.getElementById('minute').value),
+            city: document.getElementById('city').value,
+            gender: document.getElementById('gender').value,
+            calType: document.querySelector('input[name="calendarType"]:checked').value,
+            isLeap: document.getElementById('lunarLeap').value === 'true'
+        };
+        
+        // 获取命主二的数据
+        const data2 = {
+            year: parseInt(document.getElementById('year3').value),
+            month: parseInt(document.getElementById('month3').value),
+            day: parseInt(document.getElementById('day3').value),
+            hour: parseInt(document.getElementById('hour3').value),
+            minute: parseInt(document.getElementById('minute3').value),
+            city: document.getElementById('city3').value,
+            gender: document.getElementById('gender3').value,
+            calType: document.querySelector('input[name="calendarType"]:checked').value,
+            isLeap: document.getElementById('lunarLeap').value === 'true'
+        };
+        
+        // 验证输入
+        if (isNaN(data1.year) || isNaN(data1.month) || isNaN(data1.day) || 
+            isNaN(data2.year) || isNaN(data2.month) || isNaN(data2.day)) {
             throw new Error('请输入有效日期');
         }
-                    
-                    const analysis = `
-                        <p><strong>日主关系：</strong> 两人日干相生，关系和谐。</p>
-                        <p><strong>五行互补：</strong> 一方木旺，一方金旺，形成制衡。</p>
-                        <p><strong>缘分指数：</strong> ★★★☆☆</p>
-                        <p><strong>建议：</strong> 相互理解，取长补短，可成佳配。</p>
-                    `;
-                    
-                    document.getElementById('dualAnalysis').innerHTML = analysis;
-                    document.getElementById('dualResult').style.display = 'block';
-                    document.getElementById('relation2').innerText = '已排盘';
-                } catch (e) {
-                    alert('合盘失败：' + e.message);
-                }
+        
+        // 简单计算两个人的八字（复用主排盘逻辑的简化版）
+        function getSimplePillar(data) {
+            // 年柱
+            const yearGanIndex = (data.year - 4) % 10;
+            const yearZhiIndex = (data.year - 4) % 12;
+            const yearGan = TIAN_GAN[yearGanIndex >= 0 ? yearGanIndex : yearGanIndex + 10];
+            const yearZhi = DI_ZHI[yearZhiIndex >= 0 ? yearZhiIndex : yearZhiIndex + 12];
+            
+            // 月柱（简化）
+            const monthZhiIndex = (data.month + 1) % 12;
+            let monthGanIndex;
+            if (yearGan === '甲' || yearGan === '己') monthGanIndex = (2 + data.month - 1) % 10;
+            else if (yearGan === '乙' || yearGan === '庚') monthGanIndex = (4 + data.month - 1) % 10;
+            else if (yearGan === '丙' || yearGan === '辛') monthGanIndex = (6 + data.month - 1) % 10;
+            else if (yearGan === '丁' || yearGan === '壬') monthGanIndex = (8 + data.month - 1) % 10;
+            else monthGanIndex = (0 + data.month - 1) % 10;
+            
+            const monthGan = TIAN_GAN[monthGanIndex];
+            const monthZhi = DI_ZHI[monthZhiIndex];
+            
+            // 日柱（简化）
+            const baseDate = new Date(1900, 0, 31);
+            const targetDate = new Date(data.year, data.month - 1, data.day);
+            const days = Math.floor((targetDate - baseDate) / (24 * 60 * 60 * 1000));
+            const dayGanIndex = (days + 10) % 10;
+            const dayZhiIndex = (days + 12) % 12;
+            const dayGan = TIAN_GAN[dayGanIndex];
+            const dayZhi = DI_ZHI[dayZhiIndex];
+            
+            // 时柱（简化）
+            const hourZhiIndex = Math.floor(data.hour / 2) % 12;
+            const startGanMap = [0, 2, 4, 6, 8];
+            const startGanIndex = startGanMap[Math.floor(dayGanIndex / 2)];
+            const hourGanIndex = (startGanIndex + hourZhiIndex) % 10;
+            const hourGan = TIAN_GAN[hourGanIndex];
+            const hourZhi = DI_ZHI[hourZhiIndex];
+            
+            return {
+                year: yearGan + yearZhi,
+                month: monthGan + monthZhi,
+                day: dayGan + dayZhi,
+                hour: hourGan + hourZhi,
+                dayGan: dayGan,
+                dayZhi: dayZhi,
+                yearGan: yearGan
             };
+        }
+        
+        // 计算两个人的八字
+        const bazi1 = getSimplePillar(data1);
+        const bazi2 = getSimplePillar(data2);
+        
+        // 分析日主关系
+        const ganRelation = (() => {
+            const g1 = bazi1.dayGan;
+            const g2 = bazi2.dayGan;
+            
+            // 五行生克
+            const wx1 = GAN_WUXING[TIAN_GAN.indexOf(g1)];
+            const wx2 = GAN_WUXING[TIAN_GAN.indexOf(g2)];
+            
+            if (wx1 === wx2) return '日主五行相同，性格相似，容易理解对方';
+            if (SHENG[wx1] === wx2) return `${g1}${wx1}生${g2}${wx2}，你愿意付出，关系融洽`;
+            if (SHENG[wx2] === wx1) return `${g2}${wx2}生${g1}${wx1}，对方能帮助你成长`;
+            if (KE[wx1] === wx2) return `${g1}${wx1}克${g2}${wx2}，你需要多包容对方`;
+            if (KE[wx2] === wx1) return `${g2}${wx2}克${g1}${wx1}，对方可能给你压力`;
+            return '日主关系和谐';
+        })();
+        
+        // 计算缘分指数
+        let score = 0;
+        // 天干相合 +20
+        if (TIAN_GAN_HE[bazi1.dayGan] === bazi2.dayGan || TIAN_GAN_HE[bazi2.dayGan] === bazi1.dayGan) score += 20;
+        // 地支相合 +15
+        const heMap = {'子丑':1,'寅亥':1,'卯戌':1,'辰酉':1,'巳申':1,'午未':1};
+        if (heMap[bazi1.dayZhi + bazi2.dayZhi] || heMap[bazi2.dayZhi + bazi1.dayZhi]) score += 15;
+        // 五行相生 +10
+        const wx1 = GAN_WUXING[TIAN_GAN.indexOf(bazi1.dayGan)];
+        const wx2 = GAN_WUXING[TIAN_GAN.indexOf(bazi2.dayGan)];
+        if (SHENG[wx1] === wx2 || SHENG[wx2] === wx1) score += 10;
+        // 基础分40
+        score += 40;
+        
+        const stars = score >= 85 ? '★★★★★' : 
+                      score >= 70 ? '★★★★☆' : 
+                      score >= 55 ? '★★★☆☆' : 
+                      score >= 40 ? '★★☆☆☆' : '★☆☆☆☆';
+        
+        // 五行互补分析
+        const wuxing1 = calculateWuXingScore({ 
+            year: {gan: bazi1.year[0], zhi: bazi1.year[1]},
+            month: {gan: bazi1.month[0], zhi: bazi1.month[1]},
+            day: {gan: bazi1.day[0], zhi: bazi1.day[1]},
+            hour: {gan: bazi1.hour[0], zhi: bazi1.hour[1]}
+        });
+        
+        const wuxing2 = calculateWuXingScore({ 
+            year: {gan: bazi2.year[0], zhi: bazi2.year[1]},
+            month: {gan: bazi2.month[0], zhi: bazi2.month[1]},
+            day: {gan: bazi2.day[0], zhi: bazi2.day[1]},
+            hour: {gan: bazi2.hour[0], zhi: bazi2.hour[1]}
+        });
+        
+        // 找出最旺和最弱的五行
+        let wuxingTips = [];
+        for (let wx of ['木','火','土','金','水']) {
+            if (wuxing1[wx] > 2.5 && wuxing2[wx] < 1) wuxingTips.push(`你${wx}旺，对方缺${wx}，可以互补`);
+            else if (wuxing2[wx] > 2.5 && wuxing1[wx] < 1) wuxingTips.push(`对方${wx}旺，你缺${wx}，可以互补`);
+        }
+        
+        // 生成分析报告
+        const analysis = `
+            <div style="background: #f8f6ff; padding: 15px; border-radius: 20px; margin-bottom: 15px;">
+                <h4 style="color:#5b4c9a; margin-bottom:10px;">📊 八字信息</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="background: white; padding: 10px; border-radius: 15px;">
+                        <strong>命主一</strong><br>
+                        ${bazi1.year} ${bazi1.month} ${bazi1.day} ${bazi1.hour}
+                    </div>
+                    <div style="background: white; padding: 10px; border-radius: 15px;">
+                        <strong>命主二</strong><br>
+                        ${bazi2.year} ${bazi2.month} ${bazi2.day} ${bazi2.hour}
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color:#5b4c9a; margin-bottom:5px;">💞 日主关系</h4>
+                <p style="background: #f0f7ff; padding: 10px; border-radius: 15px;">${ganRelation}</p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color:#5b4c9a; margin-bottom:5px;">⚖️ 五行互补</h4>
+                <p style="background: #f0f7ff; padding: 10px; border-radius: 15px;">
+                    ${wuxingTips.length > 0 ? wuxingTips.join('<br>') : '五行较为平衡，没有明显的互补关系'}
+                </p>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <h4 style="color:#5b4c9a; margin-bottom:5px;">💝 缘分指数</h4>
+                <div style="background: #f0f7ff; padding: 10px; border-radius: 15px; text-align: center;">
+                    <div style="font-size: 1.8rem; color: #5b4c9a; margin-bottom:5px;">${stars}</div>
+                    <div style="font-size: 1.2rem;">${score}分</div>
+                </div>
+            </div>
+            
+            <div style="background: #e9e1ff; padding: 15px; border-radius: 15px;">
+                <h4 style="color:#5b4c9a; margin-bottom:5px;">💌 相处建议</h4>
+                <p>${score >= 70 ? '非常般配，互相成就' : 
+                         score >= 55 ? '比较合适，需要磨合' : 
+                         '有一定挑战，需要更多包容'}</p>
+                <p style="font-size:0.9rem; color:#666; margin-top:10px;">相互理解，取长补短，可成佳配。</p>
+            </div>
+        `;
+        
+        document.getElementById('dualAnalysis').innerHTML = analysis;
+        document.getElementById('dualResult').style.display = 'block';
+        document.getElementById('relation2').innerText = '已排盘';
+        
+    } catch (e) {
+        console.error('合盘失败:', e);
+        document.getElementById('dualAnalysis').innerHTML = `<p style="color:#c2410c;">❌ 合盘失败：${e.message}</p>`;
+        document.getElementById('dualResult').style.display = 'block';
+    }
+};
             
             // ---------- 工具函数 ----------
             function isValidDate(year, month, day) {
