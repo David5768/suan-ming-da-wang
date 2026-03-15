@@ -1800,8 +1800,16 @@ window.saveCurrentToFavorites = function() {
                     for (let i = 0; i < gans.length; i++) {
                         for (let j = i+1; j < gans.length; j++) {
                             if (TIAN_GAN_HE[gans[i]] === gans[j]) {
-                                relations.push(`${gans[i]}${gans[j]}合化${({ '甲己':'土', '乙庚':'金', '丙辛':'水', '丁壬':'木', '戊癸':'火' })[gans[i]+gans[j]]}`);
-                            }
+    const heMap = {
+        '甲己': '土',
+        '乙庚': '金',
+        '丙辛': '水',
+        '丁壬': '木',
+        '戊癸': '火'
+    };
+    const heKey = gans[i] + gans[j];
+    relations.push(`${gans[i]}${gans[j]}合化${heMap[heKey] || ''}`);
+}
                             if (TIAN_GAN_CHONG[gans[i]] === gans[j]) {
                                 relations.push(`${gans[i]}${gans[j]}相冲`);
                             }
