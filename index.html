@@ -1427,7 +1427,7 @@ window.calculateDual = function() {
         document.getElementById('dualAnalysis').innerHTML = '<p style="text-align:center;">🔮 正在合盘中...</p>';
         document.getElementById('dualResult').style.display = 'block';
         
-        // 获取命主一的数据（当前主排盘）
+        // 获取命主一的数据（当前主排盘）- 注意这里用的是 year, month, day 等
         const data1 = {
             year: parseInt(document.getElementById('year').value),
             month: parseInt(document.getElementById('month').value),
@@ -1440,7 +1440,7 @@ window.calculateDual = function() {
             isLeap: document.getElementById('lunarLeap').value === 'true'
         };
         
-        // 获取命主二的数据
+        // 获取命主二的数据 - 注意这里用的是 year3, month3, day3 等（对应HTML中的ID）
         const data2 = {
             year: parseInt(document.getElementById('year3').value),
             month: parseInt(document.getElementById('month3').value),
@@ -1529,23 +1529,61 @@ window.calculateDual = function() {
         })();
         
         // 计算缘分指数
-        let score = 0;
-        // 天干相合 +20
-        if (TIAN_GAN_HE[bazi1.dayGan] === bazi2.dayGan || TIAN_GAN_HE[bazi2.dayGan] === bazi1.dayGan) score += 20;
-        // 地支相合 +15
-        const heMap = {'子丑':1,'寅亥':1,'卯戌':1,'辰酉':1,'巳申':1,'午未':1};
-        if (heMap[bazi1.dayZhi + bazi2.dayZhi] || heMap[bazi2.dayZhi + bazi1.dayZhi]) score += 15;
-        // 五行相生 +10
-        const wx1 = GAN_WUXING[TIAN_GAN.indexOf(bazi1.dayGan)];
-        const wx2 = GAN_WUXING[TIAN_GAN.indexOf(bazi2.dayGan)];
-        if (SHENG[wx1] === wx2 || SHENG[wx2] === wx1) score += 10;
-        // 基础分40
-        score += 40;
-        
-        const stars = score >= 85 ? '★★★★★' : 
-                      score >= 70 ? '★★★★☆' : 
-                      score >= 55 ? '★★★☆☆' : 
-                      score >= 40 ? '★★☆☆☆' : '★☆☆☆☆';
+let score = 40; // 基础分40
+
+// 1. 天干相合 +20
+if (TIAN_GAN_HE[bazi1.dayGan] === bazi2.dayGan || TIAN_GAN_HE[bazi2.dayGan] === bazi1.dayGan) {
+    score += 20;
+    console.log('天干相合 +20');
+}
+
+// 2. 地支相合 +15
+const heMap = {'子丑':1,'寅亥':1,'卯戌':1,'辰酉':1,'巳申':1,'午未':1};
+const diZhiHe = bazi1.dayZhi + bazi2.dayZhi;
+const diZhiHe2 = bazi2.dayZhi + bazi1.dayZhi;
+if (heMap[diZhiHe] || heMap[diZhiHe2]) {
+    score += 15;
+    console.log('地支相合 +15');
+}
+
+// 3. 五行相生 +10
+const wx1 = GAN_WUXING[TIAN_GAN.indexOf(bazi1.dayGan)];
+const wx2 = GAN_WUXING[TIAN_GAN.indexOf(bazi2.dayGan)];
+if (SHENG[wx1] === wx2) {
+    score += 10;
+    console.log(`${wx1}生${wx2} +10`);
+} else if (SHENG[wx2] === wx1) {
+    score += 10;
+    console.log(`${wx2}生${wx1} +10`);
+}
+
+// 4. 五行相同 +5
+if (wx1 === wx2) {
+    score += 5;
+    console.log('五行相同 +5');
+}
+
+// 5. 年柱相合 +10
+if (TIAN_GAN_HE[bazi1.yearGan] === bazi2.yearGan || TIAN_GAN_HE[bazi2.yearGan] === bazi1.yearGan) {
+    score += 10;
+    console.log('年柱天干相合 +10');
+}
+
+// 6. 月柱相合 +10
+const month1Gan = bazi1.month[0];
+const month2Gan = bazi2.month[0];
+if (TIAN_GAN_HE[month1Gan] === month2Gan || TIAN_GAN_HE[month2Gan] === month1Gan) {
+    score += 10;
+    console.log('月柱天干相合 +10');
+}
+
+// 限制最高分100
+score = Math.min(score, 100);
+
+const stars = score >= 80 ? '★★★★★' : 
+              score >= 70 ? '★★★★☆' : 
+              score >= 60 ? '★★★☆☆' : 
+              score >= 45 ? '★★☆☆☆' : '★☆☆☆☆';
         
         // 五行互补分析
         const wuxing1 = calculateWuXingScore({ 
@@ -1622,6 +1660,15 @@ window.calculateDual = function() {
         console.error('合盘失败:', e);
         document.getElementById('dualAnalysis').innerHTML = `<p style="color:#c2410c;">❌ 合盘失败：${e.message}</p>`;
         document.getElementById('dualResult').style.display = 'block';
+    }
+};
+
+            window.toggleDualMode = function() {
+    const container = document.getElementById('dualModeContainer');
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+    } else {
+        container.style.display = 'none';
     }
 };
             
