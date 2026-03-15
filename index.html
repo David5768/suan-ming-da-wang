@@ -2119,17 +2119,16 @@ const monthZhiIndex = (month + 1) % 12;
 
 // 月干计算（五虎遁）
 let monthGanIndex;
-const currentYearGan = TIAN_GAN[yearGanIndex];  // ← 改为 currentYearGan
-if (currentYearGan === '甲' || currentYearGan === '己') {
-    monthGanIndex = (2 + month - 1) % 10; // 丙
-} else if (currentYearGan === '乙' || currentYearGan === '庚') {
-    monthGanIndex = (4 + month - 1) % 10; // 戊
-} else if (currentYearGan === '丙' || currentYearGan === '辛') {
-    monthGanIndex = (6 + month - 1) % 10; // 庚
-} else if (currentYearGan === '丁' || currentYearGan === '壬') {
-    monthGanIndex = (8 + month - 1) % 10; // 壬
-} else if (currentYearGan === '戊' || currentYearGan === '癸') {
-    monthGanIndex = (0 + month - 1) % 10; // 甲
+if (yearGan === '甲' || yearGan === '己') {
+    monthGanIndex = (2 + month - 1) % 10;
+} else if (yearGan === '乙' || yearGan === '庚') {
+    monthGanIndex = (4 + month - 1) % 10;
+} else if (yearGan === '丙' || yearGan === '辛') {
+    monthGanIndex = (6 + month - 1) % 10;
+} else if (yearGan === '丁' || yearGan === '壬') {
+    monthGanIndex = (8 + month - 1) % 10;
+} else if (yearGan === '戊' || yearGan === '癸') {
+    monthGanIndex = (0 + month - 1) % 10;
 }
 
 const monthGan = TIAN_GAN[monthGanIndex];
