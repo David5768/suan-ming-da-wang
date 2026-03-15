@@ -825,122 +825,212 @@ if (typeof iztro === 'undefined') {
             
             // ---------- 生成命理分析 (安全版) ----------
             function generateFortuneAnalysis(pillars, wxScore, shensha) {
-                // 安全检查
-                if (!pillars || !pillars.day || !pillars.year || !pillars.month || !pillars.hour) {
-                    return getEmptyAnalysis();
-                }
-                
-                const dayGan = pillars.day.gan || '';
-                const dayGanIdx = TIAN_GAN.indexOf(dayGan);
-                if (dayGanIdx === -1) return getEmptyAnalysis();
-                
-                const dayWx = GAN_WUXING[dayGanIdx];
-                const dayZhi = pillars.day.zhi || '';
-                
-                const dayZhiWx = (() => {
-                    if (['寅', '卯'].includes(dayZhi)) return '木';
-                    if (['巳', '午'].includes(dayZhi)) return '火';
-                    if (['申', '酉'].includes(dayZhi)) return '金';
-                    if (['亥', '子'].includes(dayZhi)) return '水';
-                    return '土';
-                })();
-                
-                // 计算十神数量
-                const shishenCount = {
-                    '比肩': 0, '劫财': 0, '食神': 0, '伤官': 0,
-                    '正财': 0, '偏财': 0, '正官': 0, '七杀': 0,
-                    '正印': 0, '偏印': 0
-                };
-                
-                [pillars.year.gan, pillars.month.gan, pillars.hour.gan].forEach(gan => {
-                    if (!gan) return;
-                    const ss = getShiShen(dayGan, gan);
-                    if (ss && shishenCount.hasOwnProperty(ss)) {
-                        shishenCount[ss]++;
-                    }
-                });
-                
-                // 判断身强身弱
-                const wxScoreSafe = wxScore || { '木':0, '火':0, '土':0, '金':0, '水':0 };
-                const selfScore = wxScoreSafe[dayWx] || 0;
-                const otherScore = Object.entries(wxScoreSafe)
-                    .filter(([wx]) => wx !== dayWx)
-                    .reduce((sum, [, score]) => sum + (score || 0), 0);
-                
-                const isStrong = selfScore > otherScore + 1.5;
-                const isWeak = selfScore < otherScore - 1.5;
-                
-                // 安全获取十神
-                const yearShiShen = getShiShen(dayGan, pillars.year.gan) || '';
-                const monthShiShen = getShiShen(dayGan, pillars.month.gan) || '';
-                const hourShiShen = getShiShen(dayGan, pillars.hour.gan) || '';
-                
-                // 安全获取日支藏干
-                const zhiGan = ZHI_CANG_GAN[dayZhi]?.[0]?.干;
-                const riZhiShiShen = zhiGan ? getShiShen(dayGan, zhiGan) : '未知';
-                
-                const shenshaSafe = Array.isArray(shensha) ? shensha : [];
-                
-                // 生成各项分析
-                return {
-                    summary: `【总论】日主为${dayGan}，五行属${dayWx}，阴阳为${YIN_YANG[dayGan] ? '阳' : '阴'}。` +
-                            `八字中${dayWx}元素出现${wxScoreSafe[dayWx].toFixed(1)}分，` +
-                            `${isStrong ? '命主身旺' : isWeak ? '命主身弱' : '命主中和'}。` +
-                            `五行分数：木${wxScoreSafe['木'].toFixed(1)}、火${wxScoreSafe['火'].toFixed(1)}、` +
-                            `土${wxScoreSafe['土'].toFixed(1)}、金${wxScoreSafe['金'].toFixed(1)}、水${wxScoreSafe['水'].toFixed(1)}。`,
-                    
-                    wealth: `【财运】财星五行为${KE[dayWx]}，八字中正财${shishenCount['正财']}位、偏财${shishenCount['偏财']}位。` +
-                            `财星分数${(wxScoreSafe[KE[dayWx]] || 0).toFixed(1)}分。` +
-                            `${shishenCount['正财'] + shishenCount['偏财'] > 2 ? '财星旺盛' : 
-                              shishenCount['正财'] + shishenCount['偏财'] > 0 ? '财星有气' : '财星不显'}。`,
-                    
-                    career: `【事业】官杀五行为${KE[dayWx]}，正官${shishenCount['正官']}位、七杀${shishenCount['七杀']}位。` +
-                            `印星五行为${SHENG[dayWx]}，正印${shishenCount['正印']}位、偏印${shishenCount['偏印']}位。`,
-                    
-                    marriage: `【婚姻】配偶宫坐${dayZhi}，五行属${dayZhiWx}。` +
-                              `日支十神：${riZhiShiShen}。` +
-                              `${shenshaSafe.includes('桃花') ? '命带桃花，异性缘佳；' : ''}`,
-                    
-                    children: `【子女】食伤五行为${SHENG[dayWx]}，食神${shishenCount['食神']}位、伤官${shishenCount['伤官']}位。` +
-                              `时柱为子女宫，${hourShiShen}坐时干。`,
-                    
-                    health: `【健康】日主属${dayWx}，对应${dayWx === '木' ? '肝胆' : dayWx === '火' ? '心脏' : 
-                                           dayWx === '土' ? '脾胃' : dayWx === '金' ? '肺' : '肾脏'}。`,
-                    
-                    parents: `【父母】年柱${pillars.year.gan}${pillars.year.zhi}为父母宫，月柱${pillars.month.gan}${pillars.month.zhi}为兄弟宫。` +
-                             `年干十神：${yearShiShen}。`,
-                    
-                    house: `【田宅】五行土代表房产，八字中土元素${wxScoreSafe['土'].toFixed(1)}分。` +
-                           `${wxScoreSafe['土'] > 2 ? '房产运强' : wxScoreSafe['土'] > 1 ? '房产运平稳' : '房产运较弱'}`,
-                    
-                    legal: `【官非】官杀星共${shishenCount['正官'] + shishenCount['七杀']}位。`,
-                    
-                    travel: `【驿马】${shenshaSafe.includes('驿马') ? '命带驿马，宜外出发展' : '无驿马星，宜稳定发展'}`,
-                    
-                    personality: `【性格】日干${dayGan}，五行属${dayWx}。` +
-                                 `${dayWx === '木' ? '仁慈善良' : dayWx === '火' ? '热情开朗' : 
-                                   dayWx === '土' ? '稳重诚实' : dayWx === '金' ? '果决坚毅' : '智慧圆通'}`,
-                    
-                    virtue: `【福德】命带${shenshaSafe.length > 0 ? shenshaSafe.join('、') : '普通星煞'}。`
-                };
-            }
-            
-            function getEmptyAnalysis() {
-                return {
-                    summary: '【总论】数据不足，无法分析',
-                    wealth: '【财运】数据不足',
-                    career: '【事业】数据不足',
-                    marriage: '【婚姻】数据不足',
-                    children: '【子女】数据不足',
-                    health: '【健康】数据不足',
-                    parents: '【父母】数据不足',
-                    house: '【田宅】数据不足',
-                    legal: '【官非】数据不足',
-                    travel: '【驿马】数据不足',
-                    personality: '【性格】数据不足',
-                    virtue: '【福德】数据不足'
-                };
-            }
+    // 安全检查
+    if (!pillars || !pillars.day || !pillars.year || !pillars.month || !pillars.hour) {
+        return getEmptyAnalysis();
+    }
+    
+    const dayGan = pillars.day.gan || '';
+    const dayGanIdx = TIAN_GAN.indexOf(dayGan);
+    if (dayGanIdx === -1) return getEmptyAnalysis();
+    
+    const dayWx = GAN_WUXING[dayGanIdx];
+    const dayZhi = pillars.day.zhi || '';
+    
+    const dayZhiWx = (() => {
+        if (['寅', '卯'].includes(dayZhi)) return '木';
+        if (['巳', '午'].includes(dayZhi)) return '火';
+        if (['申', '酉'].includes(dayZhi)) return '金';
+        if (['亥', '子'].includes(dayZhi)) return '水';
+        return '土';
+    })();
+    
+    // 计算十神数量
+    const shishenCount = {
+        '比肩': 0, '劫财': 0, '食神': 0, '伤官': 0,
+        '正财': 0, '偏财': 0, '正官': 0, '七杀': 0,
+        '正印': 0, '偏印': 0
+    };
+    
+    [pillars.year.gan, pillars.month.gan, pillars.hour.gan].forEach(gan => {
+        if (!gan) return;
+        const ss = getShiShen(dayGan, gan);
+        if (ss && shishenCount.hasOwnProperty(ss)) {
+            shishenCount[ss]++;
+        }
+    });
+    
+    // 判断身强身弱
+    const wxScoreSafe = wxScore || { '木':0, '火':0, '土':0, '金':0, '水':0 };
+    const selfScore = wxScoreSafe[dayWx] || 0;
+    const otherScore = Object.entries(wxScoreSafe)
+        .filter(([wx]) => wx !== dayWx)
+        .reduce((sum, [, score]) => sum + (score || 0), 0);
+    
+    const isStrong = selfScore > otherScore + 1.5;
+    const isWeak = selfScore < otherScore - 1.5;
+    const isBalanced = !isStrong && !isWeak;
+    
+    // 安全获取十神
+    const yearShiShen = getShiShen(dayGan, pillars.year.gan) || '';
+    const monthShiShen = getShiShen(dayGan, pillars.month.gan) || '';
+    const hourShiShen = getShiShen(dayGan, pillars.hour.gan) || '';
+    
+    // 安全获取日支藏干
+    const zhiGan = ZHI_CANG_GAN[dayZhi]?.[0]?.干;
+    const riZhiShiShen = zhiGan ? getShiShen(dayGan, zhiGan) : '未知';
+    
+    const shenshaSafe = Array.isArray(shensha) ? shensha : [];
+    
+    // 生成个性化分析
+    return {
+        summary: `【命主总论】您是${dayGan}日主，五行属${dayWx}，性格${dayWx === '木' ? '仁慈善良，有同理心' : 
+                                                        dayWx === '火' ? '热情开朗，行动力强' : 
+                                                        dayWx === '土' ? '稳重踏实，讲信用' : 
+                                                        dayWx === '金' ? '果决刚毅，重义气' : 
+                                                        '智慧圆融，善于变通'}。八字中${dayWx}元素${selfScore.toFixed(1)}分，` +
+                    `${isStrong ? '身旺，精力充沛，抗压能力强，但有时过于固执' : 
+                      isWeak ? '身弱，心思细腻，善于借力，但容易缺乏自信' : 
+                      '中和，性格平衡，适应力强'}。` +
+                    `五行中${wxScoreSafe['木'] > 2 ? '木旺需注意肝胆，' : wxScoreSafe['木'] < 0.5 ? '木弱需养肝，' : ''}` +
+                    `${wxScoreSafe['火'] > 2 ? '火旺需注意心脏，' : wxScoreSafe['火'] < 0.5 ? '火弱需养心，' : ''}` +
+                    `${wxScoreSafe['土'] > 2 ? '土旺需注意脾胃，' : wxScoreSafe['土'] < 0.5 ? '土弱需健脾，' : ''}` +
+                    `${wxScoreSafe['金'] > 2 ? '金旺需注意肺，' : wxScoreSafe['金'] < 0.5 ? '金弱需润肺，' : ''}` +
+                    `${wxScoreSafe['水'] > 2 ? '水旺需注意肾，' : wxScoreSafe['水'] < 0.5 ? '水弱需补肾，' : ''}` +
+                    `整体来看，您的命局${isStrong ? '气势旺盛' : isWeak ? '需要生扶' : '相对平衡'}。`,
+        
+        wealth: `【财运分析】您的财星五行属${KE[dayWx]}，八字中正财${shishenCount['正财']}位、偏财${shishenCount['偏财']}位。` +
+                `财星总分为${(wxScoreSafe[KE[dayWx]] || 0).toFixed(1)}分。` +
+                `${shishenCount['正财'] + shishenCount['偏财'] > 2 ? '财星旺盛，天生对金钱敏感，适合经商或金融行业' : 
+                  shishenCount['正财'] + shishenCount['偏财'] > 0 ? '财星有气，通过努力能积累财富' : 
+                  '财星不显，不适合独立经商，宜与人合作或靠专业技能求财'}。` +
+                `${pillars.month.gan === KE[dayWx] ? '月干见财，25-45岁是财运黄金期' : ''}` +
+                `${pillars.hour.gan === KE[dayWx] ? '时干见财，晚年财运不错，可得子女之助' : ''}` +
+                `${wxScoreSafe[KE[dayWx]] > 3 ? '财旺身强，适合风险投资' : wxScoreSafe[KE[dayWx]] > 1.5 ? '宜稳定理财' : '宜保守储蓄'}。`,
+        
+        career: `【事业分析】您的官杀星五行属${KE[dayWx]}，正官${shishenCount['正官']}位、七杀${shishenCount['七杀']}位。` +
+                `印星五行属${SHENG[dayWx]}，正印${shishenCount['正印']}位、偏印${shishenCount['偏印']}位。` +
+                `${shishenCount['正官'] + shishenCount['七杀'] > 2 ? '官杀旺，事业心强，有管理才能，适合在体制内或大企业发展' : 
+                  shishenCount['正官'] + shishenCount['七杀'] > 0 ? '有事业心，但不强求权力，适合专业技术岗位' : 
+                  '官杀不显，不喜欢被约束，适合自由职业或创业'}。` +
+                `${shishenCount['正印'] + shishenCount['偏印'] > 1 ? '印星旺，多得贵人相助，学习能力强，有学历优势' : 
+                  shishenCount['正印'] + shishenCount['偏印'] > 0 ? '有贵人但不多，关键时候有人拉一把' : 
+                  '印星弱，凡事靠自己，独立性强'}。`,
+        
+        marriage: `【婚姻分析】您的配偶宫坐${dayZhi}，五行属${dayZhiWx}。` +
+                  `配偶性格：${dayZhiWx === '木' ? '仁慈善良，但有时固执' : 
+                                dayZhiWx === '火' ? '热情开朗，但有时急躁' : 
+                                dayZhiWx === '土' ? '稳重踏实，但有时保守' : 
+                                dayZhiWx === '金' ? '刚毅果断，但有时尖锐' : 
+                                '智慧圆通，但有时善变'}。` +
+                  `日支十神为${riZhiShiShen}，` +
+                  `${riZhiShiShen.includes('财') ? '配偶可能擅长理财' : 
+                    riZhiShiShen.includes('官') ? '配偶有一定社会地位' : 
+                    riZhiShiShen.includes('印') ? '配偶对你多有照顾' : 
+                    riZhiShiShen.includes('比') ? '配偶与你性格相似' : 
+                    '配偶与你互动较多'}。` +
+                  `${shenshaSafe.includes('桃花') ? '命带桃花，异性缘佳，但也需防感情纠葛' : ''}` +
+                  `${dayZhi === pillars.month.zhi ? '夫妻宫与月柱相同，感情深厚' : ''}` +
+                  `${isWeak ? '身弱之人，婚姻中易依赖对方' : '身旺之人，婚姻中占主导地位'}。`,
+        
+        children: `【子女分析】您的子女星为食神伤官，五行属${SHENG[dayWx]}，食神${shishenCount['食神']}位、伤官${shishenCount['伤官']}位。` +
+                  `时柱为子女宫，${hourShiShen}坐时干。` +
+                  `${shishenCount['食神'] + shishenCount['伤官'] > 1 ? '子女缘分深厚，子息运强，子女聪明有出息' : 
+                    shishenCount['食神'] + shishenCount['伤官'] > 0 ? '有子女缘，数量不多但质量不错' : 
+                    '子息缘分较浅，需多做善事培福'}。` +
+                  `${hourShiShen.includes('食') ? '子女聪明活泼' : 
+                    hourShiShen.includes('伤') ? '子女有个性' : 
+                    hourShiShen.includes('财') ? '子女财运好' : 
+                    hourShiShen.includes('官') ? '子女有出息' : ''}` +
+                  `时支${pillars.hour.zhi}的五行也会影响子女的性格。`,
+        
+        health: `【健康分析】日主属${dayWx}，对应${dayWx === '木' ? '肝胆、筋骨、神经系统' : 
+                                           dayWx === '火' ? '心脏、血液循环、眼睛' : 
+                                           dayWx === '土' ? '脾胃、肌肉、皮肤' : 
+                                           dayWx === '金' ? '肺、大肠、呼吸系统' : 
+                                           '肾、膀胱、骨骼'}。` +
+                `${dayWx === '木' ? '春季养肝，多吃绿色蔬菜' : 
+                  dayWx === '火' ? '夏季养心，保持心情平和' : 
+                  dayWx === '土' ? '长夏养脾，饮食规律' : 
+                  dayWx === '金' ? '秋季养肺，多喝水' : 
+                  '冬季养肾，注意保暖'}。` +
+                `${wxScoreSafe['木'] > 3 ? '木旺克土，需防脾胃问题' : ''}` +
+                `${wxScoreSafe['火'] > 3 ? '火旺克金，需防呼吸系统问题' : ''}` +
+                `${wxScoreSafe['土'] > 3 ? '土旺克水，需防肾脏问题' : ''}` +
+                `${wxScoreSafe['金'] > 3 ? '金旺克木，需防肝胆问题' : ''}` +
+                `${wxScoreSafe['水'] > 3 ? '水旺克火，需防心脏问题' : ''}` +
+                `平时注意${wxScoreSafe[dayWx] > 2.5 ? '不要过度消耗' : '适当补充'}。`,
+        
+        parents: `【父母分析】年柱${pillars.year.gan}${pillars.year.zhi}为父母宫，月柱${pillars.month.gan}${pillars.month.zhi}为兄弟宫。` +
+                 `年干十神为${yearShiShen}，` +
+                 `${yearShiShen.includes('印') ? '父母对你关爱有加，助力较大' : 
+                   yearShiShen.includes('财') ? '家庭经济条件不错' : 
+                   yearShiShen.includes('官') ? '父母要求严格' : 
+                   yearShiShen.includes('比') ? '与父母关系平等' : 
+                   '与父母缘分较浅，需自己奋斗'}。` +
+                 `月柱代表兄弟姐妹，${monthShiShen}坐月干，` +
+                 `${monthShiShen.includes('比') ? '兄弟姐妹关系融洽' : 
+                   monthShiShen.includes('劫') ? '兄弟姐妹间有竞争' : 
+                   monthShiShen.includes('财') ? '兄弟姐妹经济不错' : 
+                   monthShiShen.includes('官') ? '兄弟姐妹有出息' : 
+                   '兄弟姐妹缘一般'}。`,
+        
+        house: `【田宅分析】五行土代表房产，八字中土元素${wxScoreSafe['土'].toFixed(1)}分。` +
+               `${wxScoreSafe['土'] > 2.5 ? '房产运强，容易拥有多处房产' : 
+                 wxScoreSafe['土'] > 1.5 ? '房产运平稳，通过努力能有自己的住房' : 
+                 wxScoreSafe['土'] > 0.5 ? '房产运一般，可能需要借助家人' : 
+                 '房产运较弱，宜租房或与家人同住'}。` +
+               `日支${dayZhi}为配偶宫，${dayZhiWx === '土' ? '配偶宫坐土，婚后易得房产' : ''}` +
+               `${shenshaSafe.includes('驿马') ? '驿马星动，适合在外地置业' : ''}` +
+               `流年逢土旺的年份（辰、戌、丑、未年）容易有房产变动。`,
+        
+        legal: `【官非分析】官杀星代表是非官非，八字中官杀共${shishenCount['正官'] + shishenCount['七杀']}位。` +
+               `${shishenCount['正官'] + shishenCount['七杀'] > 2 ? '官杀过旺，一生易有是非纠纷，需谨言慎行' : 
+                 shishenCount['正官'] + shishenCount['七杀'] > 1 ? '有一定风险，重大决策需谨慎' : 
+                 '是非较少，为人平和'}。` +
+               `日支${dayZhi}逢冲的年份（特别是${['子午冲', '丑未冲', '寅申冲', '卯酉冲', '辰戌冲', '巳亥冲'][DI_ZHI.indexOf(dayZhi) % 6]}）需注意。` +
+               `签订合同前仔细阅读，保留证据，避免冲动决策。`,
+        
+        travel: `【驿马分析】${shenshaSafe.includes('驿马') ? '命带驿马，一生多动，宜外出发展' : '无驿马星，宜稳定发展'}。` +
+                `${pillars.year.zhi === '寅' || pillars.year.zhi === '申' ? '年柱带驿马，早年离家发展' : ''}` +
+                `${pillars.month.zhi === '巳' || pillars.month.zhi === '亥' ? '月柱带驿马，中年多变动' : ''}` +
+                `${pillars.day.zhi === '寅' || pillars.day.zhi === '申' ? '日柱带驿马，婚姻中易有变动' : ''}` +
+                `${pillars.hour.zhi === '巳' || pillars.hour.zhi === '亥' ? '时柱带驿马，晚年仍奔波' : ''}` +
+                `${shenshaSafe.includes('驿马') ? '适合从事外贸、旅游、运输等流动性强的行业' : '适合教师、公务员、技术人员等稳定职业'}` +
+                `现代社会中，驿马也代表网络、信息流动，可能经常出差或从事互联网相关行业。`,
+        
+        personality: `【性格分析】日干${dayGan}，五行属${dayWx}。` +
+                     `${dayWx === '木' ? '甲木之人有领导力，正直不屈；乙木之人柔韧善变，有艺术天赋。' : 
+                       dayWx === '火' ? '丙火之人热情开朗，慷慨大方；丁火之人温和细腻，有智慧。' : 
+                       dayWx === '土' ? '戊土之人稳重诚实，有担当；己土之人包容厚道，善于协调。' : 
+                       dayWx === '金' ? '庚金之人果决坚毅，讲义气；辛金之人精致细腻，追求完美。' : 
+                       '壬水之人智慧圆通，有谋略；癸水之人细腻敏感，有直觉。'}` +
+                     `日支${dayZhi}代表内在性格，${dayZhiWx === '木' ? '内在仁慈' : 
+                                                   dayZhiWx === '火' ? '内在热情' : 
+                                                   dayZhiWx === '土' ? '内在稳重' : 
+                                                   dayZhiWx === '金' ? '内在刚毅' : 
+                                                   '内在智慧'}。` +
+                     `${wxScoreSafe['木'] > 3 ? '木旺固执，不易听取意见' : ''}` +
+                     `${wxScoreSafe['火'] > 3 ? '火旺急躁，易冲动' : ''}` +
+                     `${wxScoreSafe['土'] > 3 ? '土旺保守，不易接受新事物' : ''}` +
+                     `${wxScoreSafe['金'] > 3 ? '金旺刚硬，易与人冲突' : ''}` +
+                     `${wxScoreSafe['水'] > 3 ? '水旺善变，不易捉摸' : ''}` +
+                     `整体来看，您是一个${isStrong ? '强势独立' : isWeak ? '温和敏感' : '平衡中庸'}的人。`,
+        
+        virtue: `【福德修养】命带${shenshaSafe.length > 0 ? shenshaSafe.join('、') : '普通星煞'}。` +
+                `${shenshaSafe.includes('天乙贵人') ? '天乙贵人：一生逢凶化吉，危难时总有贵人相助。' : ''}` +
+                `${shenshaSafe.includes('文昌贵人') ? '文昌贵人：聪明好学，有文采，利于考试晋升。' : ''}` +
+                `${shenshaSafe.includes('桃花') ? '桃花星：异性缘佳，风流儒雅，但需防感情纠葛。' : ''}` +
+                `${shenshaSafe.includes('驿马') ? '驿马星：动中求财，宜外出发展，多走动。' : ''}` +
+                `${shenshaSafe.includes('华盖') ? '华盖星：有特殊才华，喜欢清静，宜修行。' : ''}` +
+                `福德深厚之人，内心平和，遇事从容。建议多行善事，培养兴趣爱好，丰富精神生活。` +
+                `您最适合通过${dayWx === '木' ? '艺术创作、教育' : 
+                                    dayWx === '火' ? '演讲、表演' : 
+                                    dayWx === '土' ? '建筑、农业' : 
+                                    dayWx === '金' ? '金融、法律' : 
+                                    '咨询、贸易'}等方式积累福报。`
+    };
+}
             
             // ---------- 主应用 ----------
             const App = {
@@ -1156,52 +1246,24 @@ if (astro && astro.rawDates && astro.rawDates.chineseDate) {
         ? safeShensha.map(s => `<span class="shensha-tag">${escapeHtml(s)}</span>`).join('')
         : '<span class="shensha-tag">无神煞</span>';
     
-   // 大运数据
-const dayunBody = document.getElementById('dayunBody');
-dayunBody.innerHTML = '';
-
-// 尝试多种可能的大运数据来源
-let daYunData = null;
-if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
-    daYunData = astro.daYun;
-} else if (astro.horoscope && astro.horoscope.decadals) {
-    // 大运可能在 horoscope.decadals 里
-    daYunData = astro.horoscope.decadals;
-} else if (astro.decadal) {
-    // 或者直接在 decadal 属性里
-    daYunData = [astro.decadal];
-}
-
-if (daYunData && daYunData.length > 0) {
-    daYunData.forEach((dy, index) => {
-        if (!dy) return;
-        const ganzhi = dy.ganZhi || dy.ganzhi || dy.heavenlyStem + dy.earthlyBranch || this.getDefaultGanZhi(index);
-        const startAge = dy.startAge || dy.start_age || dy.range?.[0] || (index * 10 + 8);
-        const startYear = dy.startYear || dy.start_year || (trueTime.year + (startAge - 1));
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
-        dayunBody.appendChild(tr);
-    });
-} else {
-    // 如果还是没有数据，生成示例大运（基于当前八字）
-    const dayGan = pillars.day.gan;
-    const dayGanIdx = TIAN_GAN.indexOf(dayGan);
-    const genderNum = gender === 'male' ? 1 : 0;
-    const startAge = 8; // 默认8岁起运
+    // 大运数据
+    const dayunBody = document.getElementById('dayunBody');
+    dayunBody.innerHTML = '';
     
-    for (let i = 0; i < 8; i++) {
-        const ganIndex = (dayGanIdx + (genderNum === 1 ? i + 1 : -i - 1) + 100) % 10;
-        const zhiIndex = (i * 2) % 12;
-        const ganzhi = TIAN_GAN[ganIndex] + DI_ZHI[zhiIndex];
-        const age = startAge + i * 10;
-        const year = trueTime.year + age - 1;
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${ganzhi}</td><td>${age}岁</td><td>${year}年</td>`;
-        dayunBody.appendChild(tr);
+    if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
+        astro.daYun.forEach((dy, index) => {
+            if (!dy) return;
+            const ganzhi = dy.ganZhi || dy.ganzhi || this.getDefaultGanZhi(index);
+            const startAge = dy.startAge || dy.start_age || (index * 10 + 8);
+            const startYear = dy.startYear || dy.start_year || (trueTime.year + startAge);
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
+            dayunBody.appendChild(tr);
+        });
+    } else {
+        dayunBody.innerHTML = '<tr><td colspan="3">暂无大运数据</td></tr>';
     }
-}
     
     // 流年标签
     const currentYear = new Date().getFullYear();
