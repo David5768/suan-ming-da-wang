@@ -611,8 +611,15 @@
             };
 
             window.onload = () => {
-    const Solar = lunar.Solar;
-    app.init();
+    // 确保 lunar 对象已加载
+    if (typeof lunar !== 'undefined' && lunar.Solar) {
+        const Solar = lunar.Solar;
+        app.init();
+    } else {
+        console.error('lunar 库加载失败，请刷新页面重试');
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('errorMsg').innerText = '初始化失败，请刷新页面重试';
+    }
 };
         })();
     </script>
