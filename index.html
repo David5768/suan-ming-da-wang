@@ -259,7 +259,6 @@
         (function() {
             const app = {
                 init() {
-                    const Solar = lunar.Solar;
                     this.bindEvents();
                     // 预填今日日期方便测试
                     const today = new Date();
@@ -611,7 +610,10 @@
                 }
             };
 
-            document.addEventListener('DOMContentLoaded', () => app.init());
+            window.onload = () => {
+    const Solar = lunar.Solar;
+    app.init();
+};
         })();
     </script>
 </head>
