@@ -265,62 +265,89 @@
         }
     </style>
     
-    <!-- 多CDN备用加载方案（修复版） -->
-    <script>
-    (function() {
-        // 定义备用CDN列表
-        var cdnList = [
-            "https://unpkg.com/lunar-javascript@1.7.5/dist/lunar.min.js",
-            "https://cdn.bootcdn.net/ajax/libs/lunar-javascript/1.7.5/lunar.min.js",
-            "https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.7.5/lunar.min.js",
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.5/dist/lunar.min.js"
-        ];
-        
-        var loaded = false;
-        
-        function loadScript(src) {
-            return new Promise(function(resolve, reject) {
-                var script = document.createElement('script');
-                script.src = src;
-                script.onload = resolve;
-                script.onerror = reject;
-                document.head.appendChild(script);
-            });
-        }
-        
-        async function tryLoadCDNs() {
-            for (var i = 0; i < cdnList.length; i++) {
-                try {
-                    await loadScript(cdnList[i]);
-                    // 等待一小段时间确保Lunar对象可用
-                    await new Promise(r => setTimeout(r, 100));
-                    if (typeof Lunar !== 'undefined' && Lunar.Solar) {
-                        console.log('✅ Lunar库加载成功:', cdnList[i]);
-                        loaded = true;
-                        // 触发应用启动事件
-                        document.dispatchEvent(new Event('LunarReady'));
-                        return;
-                    }
-                } catch (e) {
-                    console.warn('⚠️ CDN加载失败:', cdnList[i], e);
+    <!-- 多CDN备用加载方案（修复版本号） -->
+<script>
+(function() {
+    // 定义备用CDN列表 - 使用正确的版本号 1.7.4
+    var cdnList = [
+        "https://unpkg.com/lunar-javascript@1.7.4/dist/lunar.min.js",
+        "https://cdn.bootcdn.net/ajax/libs/lunar-javascript/1.7.4/lunar.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.7.4/lunar.min.js",
+        "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.4/dist/lunar.min.js"
+    ];
+    
+    // 备用版本列表（如果1.7.4不行，尝试其他版本）
+    var fallbackVersions = [
+        "https://unpkg.com/lunar-javascript@1.7.3/dist/lunar.min.js",
+        "https://unpkg.com/lunar-javascript@1.7.2/dist/lunar.min.js",
+        "https://unpkg.com/lunar-javascript@1.7.1/dist/lunar.min.js"
+    ];
+    
+    var loaded = false;
+    
+    function loadScript(src) {
+        return new Promise(function(resolve, reject) {
+            var script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    async function tryLoadCDNs() {
+        // 先尝试1.7.4的多个CDN
+        for (var i = 0; i < cdnList.length; i++) {
+            try {
+                console.log('尝试加载:', cdnList[i]);
+                await loadScript(cdnList[i]);
+                // 等待一小段时间确保Lunar对象可用
+                await new Promise(r => setTimeout(r, 200));
+                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                    console.log('✅ Lunar库加载成功:', cdnList[i]);
+                    loaded = true;
+                    document.dispatchEvent(new Event('LunarReady'));
+                    return;
                 }
-            }
-            
-            // 所有CDN都失败了，显示错误信息
-            console.error('❌ 所有CDN均加载失败');
-            var errorMsg = document.getElementById('errorMsg');
-            if (errorMsg) {
-                errorMsg.style.display = 'block';
-                errorMsg.innerHTML = '网络连接不稳定，无法加载命理计算库。请尝试：<br>' +
-                    '1. 刷新页面<br>' +
-                    '2. 切换网络环境（如使用移动数据）<br>' +
-                    '3. 稍后再试';
+            } catch (e) {
+                console.warn('⚠️ CDN加载失败:', cdnList[i], e);
             }
         }
         
-        tryLoadCDNs();
-    })();
-    </script>
+        // 如果1.7.4都不行，尝试其他版本
+        console.log('尝试加载其他版本...');
+        for (var j = 0; j < fallbackVersions.length; j++) {
+            try {
+                console.log('尝试加载备用版本:', fallbackVersions[j]);
+                await loadScript(fallbackVersions[j]);
+                await new Promise(r => setTimeout(r, 200));
+                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                    console.log('✅ Lunar库加载成功（备用版本）:', fallbackVersions[j]);
+                    loaded = true;
+                    document.dispatchEvent(new Event('LunarReady'));
+                    return;
+                }
+            } catch (e) {
+                console.warn('⚠️ 备用版本加载失败:', fallbackVersions[j], e);
+            }
+        }
+        
+        // 所有CDN都失败了，显示错误信息
+        console.error('❌ 所有CDN均加载失败');
+        var errorMsg = document.getElementById('errorMsg');
+        if (errorMsg) {
+            errorMsg.style.display = 'block';
+            errorMsg.innerHTML = '网络连接不稳定，无法加载命理计算库。请尝试：<br>' +
+                '1. 刷新页面<br>' +
+                '2. 切换网络环境（如使用移动数据）<br>' +
+                '3. 或手动访问以下链接确认CDN可用性：<br>' +
+                'https://unpkg.com/lunar-javascript@1.7.4/dist/lunar.min.js';
+        }
+    }
+    
+    tryLoadCDNs();
+})();
+</script>
     
     <script>
         (function() {
