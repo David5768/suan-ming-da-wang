@@ -610,7 +610,7 @@ if (typeof iztro === 'undefined') {
                     if (useSummerTime) h -= 1;
                     
                     // 经度时差 (每度4分钟)
-                    const diffMin = (lon - 120.0) * 4;
+                    const diffMin = (120.0 - lon) * 4;
                     let totalMin = h * 60 + minute + diffMin;
                     
                     // 转换为日期
@@ -628,12 +628,13 @@ if (typeof iztro === 'undefined') {
                     if (newHour < 0) { newHour += 24; newDay--; }
                     
                     // 处理月份边界
-                    if (newDay > 28) {
-                        const tempDate = new Date(newYear, newMonth - 1, newDay);
-                        newYear = tempDate.getFullYear();
-                        newMonth = tempDate.getMonth() + 1;
-                        newDay = tempDate.getDate();
-                    }
+                    // 用Date对象处理所有边界情况
+const tempDate = new Date(newYear, newMonth - 1, newDay, newHour, newMinute);
+newYear = tempDate.getFullYear();
+newMonth = tempDate.getMonth() + 1;
+newDay = tempDate.getDate();
+newHour = tempDate.getHours();
+newMinute = tempDate.getMinutes();
                     
                     // 时辰索引 (23:00-01:00为子时)
                     let hourIdx;
