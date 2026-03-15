@@ -616,4 +616,144 @@
 </head>
 <body>
     <div class="hero">
-        <h1>
+        <h1>🧿 紫微·八字全息排盘</h1>
+        <p>专业命理引擎 · 万字长文分析 · 十星神煞 · 大运流年 · 子女财运事业健康父母田宅官非驿马</p>
+    </div>
+    <div class="container">
+        <div class="card">
+            <form id="baziForm">
+                <div class="input-grid">
+                    <div class="input-item">
+                        <label>📅 出生年</label>
+                        <input type="number" id="year" min="1900" max="2100" value="1990" required>
+                    </div>
+                    <div class="input-item">
+                        <label>📅 月</label>
+                        <input type="number" id="month" min="1" max="12" value="1" required>
+                    </div>
+                    <div class="input-item">
+                        <label>📅 日</label>
+                        <input type="number" id="day" min="1" max="31" value="1" required>
+                    </div>
+                    <div class="input-item">
+                        <label>⏰ 时 (0-23)</label>
+                        <input type="number" id="hour" min="0" max="23" value="12">
+                    </div>
+                    <div class="input-item">
+                        <label>⏱️ 分</label>
+                        <input type="number" id="minute" min="0" max="59" value="0">
+                    </div>
+                    <div class="input-item">
+                        <label>⚥ 性别</label>
+                        <select id="gender">
+                            <option value="male">男</option>
+                            <option value="female">女</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button type="submit" class="btn-primary">🔮 排盘批算</button>
+                </div>
+            </form>
+            <div id="errorMsg" class="error-message" style="display:none;"></div>
+        </div>
+
+        <!-- 八字四柱卡片 -->
+        <div class="bazi-panels" id="pillarContainer">
+            <div class="pillar-card">
+                <div class="pillar-name">年柱</div>
+                <div class="ganzhi-big" id="yearGanZhi">--</div>
+                <div class="gan-info"><span id="yearGan">-</span> <span id="yearZhi">-</span></div>
+                <div><span class="shi-shen" id="yearShishen">-</span></div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-name">月柱</div>
+                <div class="ganzhi-big" id="monthGanZhi">--</div>
+                <div class="gan-info"><span id="monthGan">-</span> <span id="monthZhi">-</span></div>
+                <div><span class="shi-shen" id="monthShishen">-</span></div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-name">日柱</div>
+                <div class="ganzhi-big" id="dayGanZhi">--</div>
+                <div class="gan-info"><span id="dayGan">-</span> <span id="dayZhi">-</span></div>
+                <div><span class="shi-shen" id="dayShishen">日元</span></div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-name">时柱</div>
+                <div class="ganzhi-big" id="hourGanZhi">--</div>
+                <div class="gan-info"><span id="hourGan">-</span> <span id="hourZhi">-</span></div>
+                <div><span class="shi-shen" id="hourShishen">-</span></div>
+            </div>
+        </div>
+
+        <!-- 五行统计 + 神煞 -->
+        <div class="card" style="margin-top:0;">
+            <h2 class="section-title">⚖️ 五行旺衰 & 神煞</h2>
+            <div class="elements-grid" id="wuxingStats"></div>
+            <div style="margin-top:1.5rem;" id="shenshaList"></div>
+        </div>
+
+        <!-- 大运流年 -->
+        <div class="card">
+            <h2 class="section-title">📈 大运流年</h2>
+            <div id="dayunTable"></div>
+            <div style="margin-top:1.5rem;">
+                <h3 style="color:#2b3a67;">🌊 近期流年</h3>
+                <div class="liunian-row" id="liunianList"></div>
+            </div>
+            <div class="analysis-block" style="margin-top:1rem;" id="dayunAdvice"></div>
+        </div>
+
+        <!-- 10+ 详细分析板块 (网格布局) -->
+        <div class="grid-2col">
+            <div class="analysis-block">
+                <h3>🧬 总论</h3>
+                <p id="summaryText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>💰 财运</h3>
+                <p id="wealthText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>💼 事业</h3>
+                <p id="careerText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>💞 婚姻感情</h3>
+                <p id="marriageText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>👶 子女</h3>
+                <p id="childrenText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>❤️ 健康</h3>
+                <p id="healthText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>👪 父母兄弟</h3>
+                <p id="parentsText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>🏠 田宅房产</h3>
+                <p id="houseText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>⚖️ 官非诉讼</h3>
+                <p id="legalText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>✈️ 驿马外出</h3>
+                <p id="travelText">等待排盘...</p>
+            </div>
+            <div class="analysis-block">
+                <h3>🧘 性格</h3>
+                <p id="personalityText">等待排盘...</p>
+            </div>
+        </div>
+    </div>
+    <footer>
+        ⚡ 全息命理 · 超越传统 · 仅供娱乐参考
+    </footer>
+</body>
+</html>
