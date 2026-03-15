@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
     <title>紫微斗数·八字全息排盘 | 专业命理分析系统</title>
-    <!-- 主CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/iztro@2.0.5/dist/iztro.min.js"></script>
+    <!-- 使用稳定版本，去掉/dist/路径 -->
+    <script src="https://cdn.jsdelivr.net/npm/iztro@2.0.3/iztro.min.js"></script>
     <!-- 备用CDN -->
-   <script>
+    <script>
     if (typeof iztro === 'undefined') {
-        // 尝试多个备用CDN
         var backupUrls = [
-            'https://unpkg.com/iztro@2.0.5/dist/iztro.min.js',
-            'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.5/iztro.min.js'
+            'https://unpkg.com/iztro@2.0.3/iztro.min.js',
+            'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.3/iztro.min.js',
+            'https://cdn.jsdelivr.net/npm/iztro@2.0.5/iztro.min.js'
         ];
         
         function tryLoad(urls) {
@@ -22,10 +22,9 @@
             script.onerror = function() { tryLoad(urls.slice(1)); };
             document.head.appendChild(script);
         }
-        
         tryLoad(backupUrls);
     }
-</script>
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.3.4/lunar.min.js"></script>
     <style>
         * {
@@ -575,10 +574,14 @@
             
             // ---------- 日期验证函数 ----------
             function isValidDate(year, month, day) {
-                const date = new Date(year, month - 1, day);
-                return date.getFullYear() === year && 
-                       date.getMonth() === month - 1 && 
-                       date.getDate() === day;
+                try {
+                    const date = new Date(year, month - 1, day);
+                    return date.getFullYear() === year && 
+                           date.getMonth() === month - 1 && 
+                           date.getDate() === day;
+                } catch (e) {
+                    return false;
+                }
             }
             
             // ---------- 真太阳时计算 ----------
@@ -676,7 +679,7 @@
                 }
             };
             
-            // ---------- 十神计算 (修正版) ----------
+            // ---------- 十神计算 (安全版) ----------
             function getShiShen(dayGan, otherGan) {
                 if (!dayGan || !otherGan) return '';
                 
@@ -721,8 +724,14 @@
             function calculateWuXingScore(pillars) {
                 const score = { '木': 0, '火': 0, '土': 0, '金': 0, '水': 0 };
                 
+                // 安全检查
+                if (!pillars || !pillars.year || !pillars.month || !pillars.day || !pillars.hour) {
+                    return score;
+                }
+                
                 // 天干计分 (权重1)
                 [pillars.year.gan, pillars.month.gan, pillars.day.gan, pillars.hour.gan].forEach(gan => {
+                    if (!gan) return;
                     const idx = TIAN_GAN.indexOf(gan);
                     if (idx !== -1) {
                         score[GAN_WUXING[idx]] += 1.0;
@@ -731,12 +740,14 @@
                 
                 // 地支藏干计分
                 [pillars.year.zhi, pillars.month.zhi, pillars.day.zhi, pillars.hour.zhi].forEach(zhi => {
+                    if (!zhi) return;
                     const cangGan = ZHI_CANG_GAN[zhi];
-                    if (cangGan) {
+                    if (cangGan && Array.isArray(cangGan)) {
                         cangGan.forEach(item => {
+                            if (!item || !item.干) return;
                             const idx = TIAN_GAN.indexOf(item.干);
                             if (idx !== -1) {
-                                score[GAN_WUXING[idx]] += item.权重;
+                                score[GAN_WUXING[idx]] += item.权重 || 0;
                             }
                         });
                     }
@@ -745,12 +756,20 @@
                 return score;
             }
             
-            // ---------- 神煞计算 ----------
+            // ---------- 神煞计算 (安全版) ----------
             function calculateShenSha(pillars) {
                 const shensha = [];
-                const dayGan = pillars.day.gan;
-                const dayZhi = pillars.day.zhi;
-                const yearZhi = pillars.year.zhi;
+                
+                // 安全检查
+                if (!pillars || !pillars.day || !pillars.year || !pillars.month || !pillars.hour) {
+                    return shensha;
+                }
+                
+                const dayGan = pillars.day.gan || '';
+                const dayZhi = pillars.day.zhi || '';
+                const yearZhi = pillars.year.zhi || '';
+                const monthZhi = pillars.month.zhi || '';
+                const hourZhi = pillars.hour.zhi || '';
                 
                 // 天乙贵人
                 const tianyiRules = {
@@ -761,9 +780,9 @@
                     '辛': ['寅', '午']
                 };
                 const tianyiTargets = tianyiRules[dayGan];
-                if (tianyiTargets) {
-                    if (tianyiTargets.includes(pillars.year.zhi) || tianyiTargets.includes(pillars.month.zhi) || 
-                        tianyiTargets.includes(pillars.day.zhi) || tianyiTargets.includes(pillars.hour.zhi)) {
+                if (tianyiTargets && Array.isArray(tianyiTargets)) {
+                    if (tianyiTargets.includes(yearZhi) || tianyiTargets.includes(monthZhi) || 
+                        tianyiTargets.includes(dayZhi) || tianyiTargets.includes(hourZhi)) {
                         shensha.push('天乙贵人');
                     }
                 }
@@ -774,40 +793,47 @@
                     '己': '酉', '庚': '亥', '辛': '子', '壬': '寅', '癸': '卯'
                 };
                 const wenchangZhi = wenchangMap[dayGan];
-                if ([pillars.year.zhi, pillars.month.zhi, pillars.day.zhi, pillars.hour.zhi].includes(wenchangZhi)) {
+                if (wenchangZhi && [yearZhi, monthZhi, dayZhi, hourZhi].includes(wenchangZhi)) {
                     shensha.push('文昌贵人');
                 }
                 
                 // 桃花 (咸池)
                 const taoHuaZhi = ['子', '午', '卯', '酉'];
-                if (taoHuaZhi.includes(pillars.year.zhi) || taoHuaZhi.includes(pillars.day.zhi)) {
+                if (taoHuaZhi.includes(yearZhi) || taoHuaZhi.includes(dayZhi)) {
                     shensha.push('桃花');
                 }
                 
                 // 驿马
                 const yimaMap = { '寅': '申', '申': '寅', '巳': '亥', '亥': '巳' };
-                const yimaZhi = yimaMap[pillars.year.zhi];
-                if (yimaZhi && [pillars.month.zhi, pillars.day.zhi, pillars.hour.zhi].includes(yimaZhi)) {
+                const yimaZhi = yimaMap[yearZhi];
+                if (yimaZhi && [monthZhi, dayZhi, hourZhi].includes(yimaZhi)) {
                     shensha.push('驿马');
                 }
                 
                 // 华盖
                 const huaGaiZhi = ['辰', '戌', '丑', '未'];
-                if (huaGaiZhi.includes(pillars.year.zhi) && huaGaiZhi.includes(pillars.month.zhi) && 
-                    huaGaiZhi.includes(pillars.day.zhi)) {
+                if (huaGaiZhi.includes(yearZhi) && huaGaiZhi.includes(monthZhi) && 
+                    huaGaiZhi.includes(dayZhi)) {
                     shensha.push('华盖');
                 }
                 
                 return shensha;
             }
             
-            // ---------- 生成命理分析 ----------
+            // ---------- 生成命理分析 (安全版) ----------
             function generateFortuneAnalysis(pillars, wxScore, shensha) {
-                const dayGan = pillars.day.gan;
-                const dayGanIdx = TIAN_GAN.indexOf(dayGan);
-                const dayWx = GAN_WUXING[dayGanIdx];
+                // 安全检查
+                if (!pillars || !pillars.day || !pillars.year || !pillars.month || !pillars.hour) {
+                    return getEmptyAnalysis();
+                }
                 
-                const dayZhi = pillars.day.zhi;
+                const dayGan = pillars.day.gan || '';
+                const dayGanIdx = TIAN_GAN.indexOf(dayGan);
+                if (dayGanIdx === -1) return getEmptyAnalysis();
+                
+                const dayWx = GAN_WUXING[dayGanIdx];
+                const dayZhi = pillars.day.zhi || '';
+                
                 const dayZhiWx = (() => {
                     if (['寅', '卯'].includes(dayZhi)) return '木';
                     if (['巳', '午'].includes(dayZhi)) return '火';
@@ -824,6 +850,7 @@
                 };
                 
                 [pillars.year.gan, pillars.month.gan, pillars.hour.gan].forEach(gan => {
+                    if (!gan) return;
                     const ss = getShiShen(dayGan, gan);
                     if (ss && shishenCount.hasOwnProperty(ss)) {
                         shishenCount[ss]++;
@@ -831,103 +858,84 @@
                 });
                 
                 // 判断身强身弱
-                const selfScore = wxScore[dayWx];
-                const otherScore = Object.entries(wxScore)
+                const wxScoreSafe = wxScore || { '木':0, '火':0, '土':0, '金':0, '水':0 };
+                const selfScore = wxScoreSafe[dayWx] || 0;
+                const otherScore = Object.entries(wxScoreSafe)
                     .filter(([wx]) => wx !== dayWx)
-                    .reduce((sum, [, score]) => sum + score, 0);
+                    .reduce((sum, [, score]) => sum + (score || 0), 0);
                 
                 const isStrong = selfScore > otherScore + 1.5;
                 const isWeak = selfScore < otherScore - 1.5;
                 
+                // 安全获取十神
+                const yearShiShen = getShiShen(dayGan, pillars.year.gan) || '';
+                const monthShiShen = getShiShen(dayGan, pillars.month.gan) || '';
+                const hourShiShen = getShiShen(dayGan, pillars.hour.gan) || '';
+                
+                // 安全获取日支藏干
+                const zhiGan = ZHI_CANG_GAN[dayZhi]?.[0]?.干;
+                const riZhiShiShen = zhiGan ? getShiShen(dayGan, zhiGan) : '未知';
+                
+                const shenshaSafe = Array.isArray(shensha) ? shensha : [];
+                
                 // 生成各项分析
                 return {
                     summary: `【总论】日主为${dayGan}，五行属${dayWx}，阴阳为${YIN_YANG[dayGan] ? '阳' : '阴'}。` +
-                            `八字中${dayWx}元素出现${wxScore[dayWx].toFixed(1)}分，` +
+                            `八字中${dayWx}元素出现${wxScoreSafe[dayWx].toFixed(1)}分，` +
                             `${isStrong ? '命主身旺' : isWeak ? '命主身弱' : '命主中和'}。` +
-                            `五行分数：木${wxScore['木'].toFixed(1)}、火${wxScore['火'].toFixed(1)}、` +
-                            `土${wxScore['土'].toFixed(1)}、金${wxScore['金'].toFixed(1)}、水${wxScore['水'].toFixed(1)}。` +
-                            `${wxScore['木'] < 0.5 ? '木弱需注意肝胆；' : ''}` +
-                            `${wxScore['火'] < 0.5 ? '火弱需注意心血；' : ''}` +
-                            `${wxScore['土'] < 0.5 ? '土弱需注意脾胃；' : ''}` +
-                            `${wxScore['金'] < 0.5 ? '金弱需注意呼吸系统；' : ''}` +
-                            `${wxScore['水'] < 0.5 ? '水弱需注意肾脏；' : ''}`,
+                            `五行分数：木${wxScoreSafe['木'].toFixed(1)}、火${wxScoreSafe['火'].toFixed(1)}、` +
+                            `土${wxScoreSafe['土'].toFixed(1)}、金${wxScoreSafe['金'].toFixed(1)}、水${wxScoreSafe['水'].toFixed(1)}。`,
                     
                     wealth: `【财运】财星五行为${KE[dayWx]}，八字中正财${shishenCount['正财']}位、偏财${shishenCount['偏财']}位。` +
-                            `财星分数${wxScore[KE[dayWx]].toFixed(1)}分。` +
+                            `财星分数${(wxScoreSafe[KE[dayWx]] || 0).toFixed(1)}分。` +
                             `${shishenCount['正财'] + shishenCount['偏财'] > 2 ? '财星旺盛' : 
-                              shishenCount['正财'] + shishenCount['偏财'] > 0 ? '财星有气' : '财星不显'}。` +
-                            `${wxScore[KE[dayWx]] > 3 ? '适合创业投资' : 
-                              wxScore[KE[dayWx]] > 1.5 ? '宜稳定收入' : '宜与人合作'}。` +
-                            `${pillars.month.gan === KE[dayWx] ? '月干见财，中年运佳；' : ''}` +
-                            `${pillars.hour.gan === KE[dayWx] ? '时干见财，晚年可期；' : ''}`,
+                              shishenCount['正财'] + shishenCount['偏财'] > 0 ? '财星有气' : '财星不显'}。`,
                     
                     career: `【事业】官杀五行为${KE[dayWx]}，正官${shishenCount['正官']}位、七杀${shishenCount['七杀']}位。` +
-                            `印星五行为${SHENG[dayWx]}，正印${shishenCount['正印']}位、偏印${shishenCount['偏印']}位。` +
-                            `${shishenCount['正官'] + shishenCount['七杀'] > 2 ? '事业心强，易掌权力' : 
-                              shishenCount['正官'] + shishenCount['七杀'] > 0 ? '事业稳定' : '适合自由职业'}。` +
-                            `${shishenCount['正印'] + shishenCount['偏印'] > 1 ? '多得贵人相助' : '凡事靠自己'}。`,
+                            `印星五行为${SHENG[dayWx]}，正印${shishenCount['正印']}位、偏印${shishenCount['偏印']}位。`,
                     
-                    marriage: `【婚姻】配偶宫坐${pillars.day.zhi}，五行属${dayZhiWx}。` +
-                              `配偶性格：${dayZhiWx === '木' ? '仁慈' : dayZhiWx === '火' ? '热情' : 
-                                           dayZhiWx === '土' ? '稳重' : dayZhiWx === '金' ? '刚毅' : '智慧'}。` +
-                              `日支十神：${getShiShen(dayGan, ZHI_CANG_GAN[pillars.day.zhi][0].干)}。` +
-                              `${shensha.includes('桃花') ? '命带桃花，异性缘佳；' : ''}` +
-                              `${pillars.day.zhi === pillars.month.zhi ? '夫妻宫与月柱相同，感情深厚；' : ''}`,
+                    marriage: `【婚姻】配偶宫坐${dayZhi}，五行属${dayZhiWx}。` +
+                              `日支十神：${riZhiShiShen}。` +
+                              `${shenshaSafe.includes('桃花') ? '命带桃花，异性缘佳；' : ''}`,
                     
                     children: `【子女】食伤五行为${SHENG[dayWx]}，食神${shishenCount['食神']}位、伤官${shishenCount['伤官']}位。` +
-                              `时柱为子女宫，${getShiShen(dayGan, pillars.hour.gan)}坐时干。` +
-                              `${shishenCount['食神'] + shishenCount['伤官'] > 1 ? '子女缘分深厚' : 
-                                shishenCount['食神'] + shishenCount['伤官'] > 0 ? '子女正常' : '子息缘分较浅'}。`,
+                              `时柱为子女宫，${hourShiShen}坐时干。`,
                     
                     health: `【健康】日主属${dayWx}，对应${dayWx === '木' ? '肝胆' : dayWx === '火' ? '心脏' : 
-                                           dayWx === '土' ? '脾胃' : dayWx === '金' ? '肺' : '肾脏'}。` +
-                            `${dayWx === '木' ? '春季养肝' : dayWx === '火' ? '夏季养心' : 
-                              dayWx === '土' ? '长夏养脾' : dayWx === '金' ? '秋季养肺' : '冬季养肾'}。` +
-                            `${wxScore['木'] > 3 ? '木旺克土，防脾胃；' : ''}` +
-                            `${wxScore['火'] > 3 ? '火旺克金，防肺；' : ''}` +
-                            `${wxScore['土'] > 3 ? '土旺克水，防肾；' : ''}` +
-                            `${wxScore['金'] > 3 ? '金旺克木，防肝胆；' : ''}` +
-                            `${wxScore['水'] > 3 ? '水旺克火，防心；' : ''}`,
+                                           dayWx === '土' ? '脾胃' : dayWx === '金' ? '肺' : '肾脏'}。`,
                     
                     parents: `【父母】年柱${pillars.year.gan}${pillars.year.zhi}为父母宫，月柱${pillars.month.gan}${pillars.month.zhi}为兄弟宫。` +
-                             `年干十神：${getShiShen(dayGan, pillars.year.gan)}。` +
-                             `${getShiShen(dayGan, pillars.year.gan).includes('印') ? '父母助力大' : 
-                               getShiShen(dayGan, pillars.year.gan).includes('财') ? '家庭条件好' : '需自己奋斗'}。`,
+                             `年干十神：${yearShiShen}。`,
                     
-                    house: `【田宅】五行土代表房产，八字中土元素${wxScore['土'].toFixed(1)}分。` +
-                           `${wxScore['土'] > 2 ? '房产运强，易置业' : 
-                             wxScore['土'] > 1 ? '房产运平稳' : '房产运较弱'}。` +
-                           `${dayZhiWx === '土' ? '配偶宫坐土，易得房产；' : ''}` +
-                           `${shensha.includes('驿马') ? '适合外地置业；' : ''}`,
+                    house: `【田宅】五行土代表房产，八字中土元素${wxScoreSafe['土'].toFixed(1)}分。` +
+                           `${wxScoreSafe['土'] > 2 ? '房产运强' : wxScoreSafe['土'] > 1 ? '房产运平稳' : '房产运较弱'}`,
                     
-                    legal: `【官非】官杀星共${shishenCount['正官'] + shishenCount['七杀']}位。` +
-                           `${shishenCount['正官'] + shishenCount['七杀'] > 2 ? '需注意法律纠纷' : 
-                             shishenCount['正官'] + shishenCount['七杀'] > 1 ? '有一定风险' : '是非较少'}。` +
-                           `签订合同需谨慎，避免冲动决策。`,
+                    legal: `【官非】官杀星共${shishenCount['正官'] + shishenCount['七杀']}位。`,
                     
-                    travel: `【驿马】${shensha.includes('驿马') ? '命带驿马，宜外出发展，动中得财' : '无驿马星，宜稳定发展'}。` +
-                            `${pillars.year.zhi === '寅' || pillars.year.zhi === '申' ? '年柱带驿马，早年多变动；' : ''}` +
-                            `${pillars.month.zhi === '巳' || pillars.month.zhi === '亥' ? '月柱带驿马，中年多外出；' : ''}`,
+                    travel: `【驿马】${shenshaSafe.includes('驿马') ? '命带驿马，宜外出发展' : '无驿马星，宜稳定发展'}`,
                     
                     personality: `【性格】日干${dayGan}，五行属${dayWx}。` +
-                                 `${dayWx === '木' ? '仁慈善良，有同情心' : 
-                                   dayWx === '火' ? '热情开朗，积极主动' : 
-                                   dayWx === '土' ? '稳重诚实，讲信用' : 
-                                   dayWx === '金' ? '果决坚毅，重义气' : 
-                                   '智慧圆通，善于应变'}。` +
-                                 `${wxScore['木'] > 3 ? '木旺固执；' : ''}` +
-                                 `${wxScore['火'] > 3 ? '火旺急躁；' : ''}` +
-                                 `${wxScore['土'] > 3 ? '土旺保守；' : ''}` +
-                                 `${wxScore['金'] > 3 ? '金旺刚硬；' : ''}` +
-                                 `${wxScore['水'] > 3 ? '水旺善变；' : ''}` +
-                                 `日支${pillars.day.zhi}影响内在性格。`,
+                                 `${dayWx === '木' ? '仁慈善良' : dayWx === '火' ? '热情开朗' : 
+                                   dayWx === '土' ? '稳重诚实' : dayWx === '金' ? '果决坚毅' : '智慧圆通'}`,
                     
-                    virtue: `【福德】命带${shensha.length > 0 ? shensha.join('、') : '普通星煞'}。` +
-                            `${shensha.includes('天乙贵人') ? '天乙贵人：逢凶化吉，遇难有贵；' : ''}` +
-                            `${shensha.includes('文昌贵人') ? '文昌贵人：聪明好学，有文采；' : ''}` +
-                            `${shensha.includes('桃花') ? '桃花星：异性缘佳，风流儒雅；' : ''}` +
-                            `${shensha.includes('驿马') ? '驿马星：动中求财，宜外出发展；' : ''}` +
-                            `${shensha.includes('华盖') ? '华盖星：有特殊才华，宜修行；' : ''}`
+                    virtue: `【福德】命带${shenshaSafe.length > 0 ? shenshaSafe.join('、') : '普通星煞'}。`
+                };
+            }
+            
+            function getEmptyAnalysis() {
+                return {
+                    summary: '【总论】数据不足，无法分析',
+                    wealth: '【财运】数据不足',
+                    career: '【事业】数据不足',
+                    marriage: '【婚姻】数据不足',
+                    children: '【子女】数据不足',
+                    health: '【健康】数据不足',
+                    parents: '【父母】数据不足',
+                    house: '【田宅】数据不足',
+                    legal: '【官非】数据不足',
+                    travel: '【驿马】数据不足',
+                    personality: '【性格】数据不足',
+                    virtue: '【福德】数据不足'
                 };
             }
             
@@ -966,7 +974,6 @@
                     const infoDiv = document.getElementById('summerTimeInfo');
                     if (active) {
                         infoDiv.style.display = 'block';
-                        infoDiv.innerHTML = '⚠️ 您输入的日期处于中国夏令时期间（1986-1992），系统已自动启用夏令时校正。';
                     } else {
                         infoDiv.style.display = 'none';
                     }
@@ -1017,10 +1024,14 @@
                                 const isLeap = document.getElementById('lunarLeap').value === 'true';
                                 let lunarDate;
                                 
-                                if (isLeap) {
-                                    lunarDate = Lunar.fromYmdWithLeap(year, month, day, true);
-                                } else {
-                                    lunarDate = Lunar.fromYmd(year, month, day);
+                                try {
+                                    if (isLeap) {
+                                        lunarDate = Lunar.fromYmdWithLeap(year, month, day, true);
+                                    } else {
+                                        lunarDate = Lunar.fromYmd(year, month, day);
+                                    }
+                                } catch (e) {
+                                    throw new Error('农历日期无效');
                                 }
                                 
                                 const solar = lunarDate.getSolar();
@@ -1051,25 +1062,34 @@
                             if (typeof iztro === 'undefined') throw new Error('命理库加载失败，请刷新页面');
                             
                             const dateStr = `${trueTime.year}-${trueTime.month.toString().padStart(2,'0')}-${trueTime.day.toString().padStart(2,'0')}`;
-                            const astro = iztro.astro.bySolar(dateStr, trueTime.shichenName, gender === 'male' ? '男' : '女', false, 'zh-CN');
+                            let astro;
+                            try {
+                                astro = iztro.astro.bySolar(dateStr, trueTime.shichenName, gender === 'male' ? '男' : '女', false, 'zh-CN');
+                            } catch (e) {
+                                throw new Error('iztro排盘失败：' + e.message);
+                            }
                             
                             if (!astro || !astro.fourPillar) {
                                 throw new Error('排盘失败，请检查输入数据');
                             }
                             
                             const bazi = astro.fourPillar;
+                            if (!Array.isArray(bazi) || bazi.length < 4) {
+                                throw new Error('八字数据格式错误');
+                            }
+                            
                             const pillars = {
-                                year: { gan: bazi[0][0], zhi: bazi[0][1] },
-                                month: { gan: bazi[1][0], zhi: bazi[1][1] },
-                                day: { gan: bazi[2][0], zhi: bazi[2][1] },
-                                hour: { gan: bazi[3][0], zhi: bazi[3][1] }
+                                year: { gan: bazi[0]?.[0] || '', zhi: bazi[0]?.[1] || '' },
+                                month: { gan: bazi[1]?.[0] || '', zhi: bazi[1]?.[1] || '' },
+                                day: { gan: bazi[2]?.[0] || '', zhi: bazi[2]?.[1] || '' },
+                                hour: { gan: bazi[3]?.[0] || '', zhi: bazi[3]?.[1] || '' }
                             };
                             
                             // 更新四柱显示
-                            document.getElementById('yearGanZhi').innerText = pillars.year.gan + pillars.year.zhi;
-                            document.getElementById('monthGanZhi').innerText = pillars.month.gan + pillars.month.zhi;
-                            document.getElementById('dayGanZhi').innerText = pillars.day.gan + pillars.day.zhi;
-                            document.getElementById('hourGanZhi').innerText = pillars.hour.gan + pillars.hour.zhi;
+                            document.getElementById('yearGanZhi').innerText = (pillars.year.gan + pillars.year.zhi) || '--';
+                            document.getElementById('monthGanZhi').innerText = (pillars.month.gan + pillars.month.zhi) || '--';
+                            document.getElementById('dayGanZhi').innerText = (pillars.day.gan + pillars.day.zhi) || '--';
+                            document.getElementById('hourGanZhi').innerText = (pillars.hour.gan + pillars.hour.zhi) || '--';
                             
                             document.getElementById('yearShiShen').innerText = getShiShen(pillars.day.gan, pillars.year.gan) || '年';
                             document.getElementById('monthShiShen').innerText = getShiShen(pillars.day.gan, pillars.month.gan) || '月';
@@ -1084,7 +1104,7 @@
                             wuxingBars.innerHTML = '';
                             
                             for (let wx in wxScore) {
-                                const score = wxScore[wx];
+                                const score = wxScore[wx] || 0;
                                 const div = document.createElement('div');
                                 div.className = 'wuxing-item';
                                 div.innerHTML = `
@@ -1101,24 +1121,27 @@
                             // 显示神煞标签
                             const shenshaTags = document.getElementById('shenshaTags');
                             const safeShensha = Array.isArray(shensha) ? shensha : [];
-shenshaTags.innerHTML = safeShensha.length > 0 
-    ? safeShensha.map(s => `<span class="shensha-tag">${s}</span>`).join('')
-    : '<span class="shensha-tag">无神煞</span>';
+                            shenshaTags.innerHTML = safeShensha.length > 0 
+                                ? safeShensha.map(s => `<span class="shensha-tag">${escapeHtml(s)}</span>`).join('')
+                                : '<span class="shensha-tag">无神煞</span>';
                             
                             // 大运数据
                             const dayunBody = document.getElementById('dayunBody');
                             dayunBody.innerHTML = '';
                             
-                            if (astro.daYun && astro.daYun.length > 0) {
+                            if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
                                 astro.daYun.forEach((dy, index) => {
+                                    if (!dy) return;
                                     const ganzhi = dy.ganZhi || dy.ganzhi || this.getDefaultGanZhi(index);
                                     const startAge = dy.startAge || dy.start_age || (index * 10 + 8);
-                                    const startYear = dy.startYear || dy.start_year || (trueTime.year + startAge - 1);
+                                    const startYear = dy.startYear || dy.start_year || (trueTime.year + (startAge - 1));
                                     
                                     const tr = document.createElement('tr');
-                                    tr.innerHTML = `<td>${ganzhi}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
+                                    tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
                                     dayunBody.appendChild(tr);
                                 });
+                            } else {
+                                dayunBody.innerHTML = '<tr><td colspan="3">暂无大运数据</td></tr>';
                             }
                             
                             // 流年标签
