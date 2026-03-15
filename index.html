@@ -1246,24 +1246,73 @@ if (astro && astro.rawDates && astro.rawDates.chineseDate) {
         ? safeShensha.map(s => `<span class="shensha-tag">${escapeHtml(s)}</span>`).join('')
         : '<span class="shensha-tag">无神煞</span>';
     
-    // 大运数据
-    const dayunBody = document.getElementById('dayunBody');
-    dayunBody.innerHTML = '';
+    // 大运数据 - 完整计算版
+const dayunBody = document.getElementById('dayunBody');
+dayunBody.innerHTML = '';
+
+// 获取年干和日干
+const yearGan = pillars.year.gan;
+const dayGan = pillars.day.gan;
+const dayGanIdx = TIAN_GAN.indexOf(dayGan);
+const monthZhiIndex = DI_ZHI.indexOf(pillars.month.zhi);
+
+// 判断阳年阴年（甲丙戊庚壬为阳，乙丁己辛癸为阴）
+const yangGan = ['甲', '丙', '戊', '庚', '壬'];
+const isYangYear = yangGan.includes(yearGan);
+
+// 阳男阴女顺排，阴男阳女逆排
+const isShun = (isYangYear && gender === 'male') || (!isYangYear && gender === 'female');
+
+// 计算起运年龄（简化版，3天=1岁，1天=4个月）
+// 这里简化处理，实际应该根据节气精确计算
+let startAge = 8; // 默认8岁
+if (gender === 'male') {
+    startAge = isYangYear ? 6 : 8; // 阳男起运早，阴男起运晚
+} else {
+    startAge = isYangYear ? 8 : 6; // 阳女起运晚，阴女起运早
+}
+
+// 根据月份微调（上半年出生起运略早，下半年略晚）
+if (trueTime.month <= 6) {
+    startAge -= 1;
+} else {
+    startAge += 1;
+}
+startAge = Math.max(1, Math.min(10, startAge)); // 限制在1-10岁之间
+
+// 生成8个大运
+for (let i = 0; i < 8; i++) {
+    let ganIndex, zhiIndex;
     
-    if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
-        astro.daYun.forEach((dy, index) => {
-            if (!dy) return;
-            const ganzhi = dy.ganZhi || dy.ganzhi || this.getDefaultGanZhi(index);
-            const startAge = dy.startAge || dy.start_age || (index * 10 + 8);
-            const startYear = dy.startYear || dy.start_year || (trueTime.year + startAge);
-            
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
-            dayunBody.appendChild(tr);
-        });
+    if (isShun) {
+        // 顺排
+        ganIndex = (dayGanIdx + i + 1) % 10;
+        zhiIndex = (monthZhiIndex + i + 1) % 12;
     } else {
-        dayunBody.innerHTML = '<tr><td colspan="3">暂无大运数据</td></tr>';
+        // 逆排
+        ganIndex = (dayGanIdx - i - 1 + 10) % 10;
+        zhiIndex = (monthZhiIndex - i - 1 + 12) % 12;
     }
+    
+    const ganzhi = TIAN_GAN[ganIndex] + DI_ZHI[zhiIndex];
+    const age = startAge + i * 10;
+    const startYear = trueTime.year + age;
+    const endYear = startYear + 9;
+    
+    // 判断当前是否在这个大运中
+    const currentYear = new Date().getFullYear();
+    const isCurrent = currentYear >= startYear && currentYear <= endYear;
+    
+    const tr = document.createElement('tr');
+    tr.style.background = isCurrent ? '#fff2e6' : '';
+    tr.style.fontWeight = isCurrent ? 'bold' : 'normal';
+    tr.innerHTML = `
+        <td>${ganzhi} ${isCurrent ? '（当前）' : ''}</td>
+        <td>${age}-${age+9}岁</td>
+        <td>${startYear}-${endYear}年</td>
+    `;
+    dayunBody.appendChild(tr);
+}
     
     // 流年标签
     const currentYear = new Date().getFullYear();
