@@ -5,11 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
     <title>紫微斗数·八字全息排盘 | 真太阳时·阴阳历切换 | iztro专业版</title>
     <!-- 使用国内CDN加速，避免CORB问题 -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/iztro/2.0.5/iztro.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/iztro@2.0.5/dist/iztro.min.js"></script>
     <!-- 备用CDN -->
-    <script>if(typeof iztro==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/iztro@2.0.5/dist/iztro.min.js"><\/script>')}</script>
+    <script>
+if (typeof iztro === 'undefined') {
+    var script = document.createElement('script');
+    script.src = 'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.5/iztro.min.js';
+    document.head.appendChild(script);
+}
+</script>
     <!-- 使用国内镜像加速 lunar.js -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/lunar-javascript/1.3.22/lunar.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.3.22/dist/lunar.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
