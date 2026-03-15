@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
-    <title>紫微斗数·八字全息排盘｜专业命理分析系统</title>
+    <title>紫微斗数·八字全息排盘｜专业真太阳时校正系统</title>
     <style>
         * {
             box-sizing: border-box;
@@ -110,6 +110,15 @@
             margin: 1rem 0;
             border-left: 6px solid #b53b3b;
         }
+        .info-message {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border-radius: 2rem;
+            padding: 1rem 2rem;
+            margin: 1rem 0;
+            border-left: 6px solid #1976d2;
+            font-size: 0.95rem;
+        }
         .bazi-panels {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -163,9 +172,6 @@
             color: #5f3b1b;
             display: inline-block;
             margin: 0.2rem;
-        }
-        .pillar-hidden {
-            display: none;
         }
         .section-title {
             font-size: 1.8rem;
@@ -234,10 +240,17 @@
             font-size: 0.95rem;
             color: #1f1a3a;
         }
-        .highlight {
-            background: #ffecbb;
+        .time-correction {
+            background: #f0f4fa;
+            padding: 1rem;
+            border-radius: 1.5rem;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            border: 1px solid #b8c9e0;
+        }
+        .time-correction span {
             font-weight: 700;
-            color: #6f4d0f;
+            color: #2b3a67;
         }
         footer {
             text-align: center;
@@ -249,167 +262,962 @@
             .bazi-panels { grid-template-columns: repeat(2,1fr); }
             .container { padding: 1rem; }
         }
-     </style>
-    <!-- 尝试加载 lunar 库，但不依赖它 -->
-    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.1/dist/lunar.min.js"></script>
+    </style>
+    
+<!-- 多CDN备用加载方案（无本地文件依赖） -->
+<script>
+(function() {
+    // 定义备用CDN列表 - 全部使用可靠CDN
+    var cdnList = [
+        "https://unpkg.com/lunar-javascript@1.7.5/dist/lunar.min.js",
+        "https://cdn.bootcdn.net/ajax/libs/lunar-javascript/1.7.5/lunar.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.7.5/lunar.min.js",
+        "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.5/dist/lunar.min.js"
+    ];
+    
+    var loaded = false;
+    
+    function loadScript(src) {
+        return new Promise(function(resolve, reject) {
+            var script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    }
+    
+    async function tryLoadCDNs() {
+        for (var i = 0; i < cdnList.length; i++) {
+            try {
+                await loadScript(cdnList[i]);
+                // 等待一小段时间确保Lunar对象可用
+                await new Promise(r => setTimeout(r, 100));
+                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                    console.log('✅ Lunar库加载成功:', cdnList[i]);
+                    loaded = true;
+                    // 启动应用
+                    if (window.startBaziApp) window.startBaziApp();
+                    return;
+                }
+            } catch (e) {
+                console.warn('⚠️ CDN加载失败:', cdnList[i], e);
+            }
+        }
+        
+        // 所有CDN都失败了，显示错误信息
+        console.error('❌ 所有CDN均加载失败');
+        var errorMsg = document.getElementById('errorMsg');
+        if (errorMsg) {
+            errorMsg.style.display = 'block';
+            errorMsg.innerHTML = '网络连接不稳定，无法加载命理计算库。请尝试：<br>' +
+                '1. 刷新页面<br>' +
+                '2. 切换网络环境（如使用移动数据）<br>' +
+                '3. 稍后再试';
+        }
+    }
+    
+    tryLoadCDNs();
+})();
+</script>
+
+<!-- 应用启动脚本 -->
+<script>
+window.startBaziApp = function() {
+    console.log('🚀 启动八字排盘应用');
+    
+    // 在这里放置您原有的所有应用代码
+    // 也就是之前那个巨大的 initApp() 函数里的所有内容
+    // ==========================================
+    // 请将您原有的整个 initApp() 函数内容复制到这里
+    // 包括：app 对象定义、所有分析函数、initApp 函数本身
+    // 然后在最后调用 initApp()
+    // ==========================================
+    
+    // 示例结构（您需要替换为实际代码）：
+    function initApp() {
+        // 您原有的 app 对象定义
+        // 原有的所有方法：getWuXingFromGanIndex, analyzeSummary 等
+        // 原有的 app.init() 调用
+    }
+    
+    initApp();
+};
+</script>
+window.initMyApp = function() {
+    // 这里放置您之前代码中 initApp 函数的所有内容
+    // 也就是整个应用程序的启动逻辑
+    console.log("Lunar库已就绪，应用启动");
+    
+    // ==========================================
+    // 重要：请将您原有的整个 initApp() 函数的内容复制到这里
+    // 从 function initApp() { 开始，到最后一个 } 结束
+    // 包括里面所有的函数定义（analyzeSummary、analyzeWealth 等）
+    // ==========================================
+    
+    // 然后在这里调用 init
+    if (typeof app !== 'undefined' && app.init) {
+        app.init();
+    }
+}
+</script>
+    
     <script>
         (function() {
-            // 完全独立的八字计算引擎（不依赖外部库）
-            const BaziEngine = {
-                // 天干
-                tiangan: ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'],
-                // 地支
-                dizhi: ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'],
-                
-                // 获取年柱
-                getYearGanzhi: function(year) {
-                    const start = 4; // 甲子为基准
-                    const offset = (year - start) % 60;
-                    if (offset < 0) offset += 60;
-                    const ganIndex = offset % 10;
-                    const zhiIndex = offset % 12;
-                    return {
-                        ganzhi: this.tiangan[ganIndex] + this.dizhi[zhiIndex],
-                        gan: this.tiangan[ganIndex],
-                        zhi: this.dizhi[zhiIndex],
-                        ganIndex: ganIndex,
-                        zhiIndex: zhiIndex
-                    };
+            // ==================== 真太阳时计算模块 ====================
+            const TrueSolarTime = {
+                // 中国主要城市经度数据库（完全内置于代码，无外部依赖）
+                cityLongitudes: {
+                    '北京': 116.40, '上海': 121.47, '广州': 113.23, '深圳': 114.07,
+                    '成都': 104.07, '重庆': 106.55, '武汉': 114.31, '西安': 108.95,
+                    '南京': 118.78, '杭州': 120.15, '天津': 117.20, '沈阳': 123.43,
+                    '长春': 125.35, '哈尔滨': 126.63, '济南': 117.00, '青岛': 120.33,
+                    '郑州': 113.65, '长沙': 112.98, '南昌': 115.89, '合肥': 117.27,
+                    '福州': 119.30, '厦门': 118.10, '台北': 121.52, '香港': 114.17,
+                    '澳门': 113.55, '南宁': 108.33, '海口': 110.35, '贵阳': 106.71,
+                    '昆明': 102.73, '拉萨': 91.11, '乌鲁木齐': 87.68, '呼和浩特': 111.65,
+                    '银川': 106.27, '西宁': 101.74, '兰州': 103.73, '太原': 112.56,
+                    '石家庄': 114.48, '秦皇岛': 119.60, '大连': 121.62, '宁波': 121.55,
+                    '温州': 120.65, '无锡': 120.29, '苏州': 120.58, '佛山': 113.12,
+                    '东莞': 113.75, '中山': 113.38, '珠海': 113.52, '惠州': 114.40,
+                    '汕头': 116.68, '桂林': 110.28, '洛阳': 112.45, '徐州': 117.20,
+                    '扬州': 119.42, '绍兴': 120.58, '嘉兴': 120.75, '常州': 119.95,
+                    '南通': 120.86, '镇江': 119.44, '泰州': 119.90, '盐城': 120.13,
+                    '淮安': 119.15, '连云港': 119.16, '芜湖': 118.38, '蚌埠': 117.34,
+                    '马鞍山': 118.48, '安庆': 117.02, '九江': 115.97, '赣州': 114.93,
+                    '上饶': 117.97, '景德镇': 117.17, '株洲': 113.16, '湘潭': 112.94,
+                    '衡阳': 112.57, '邵阳': 111.46, '岳阳': 113.12, '常德': 111.69,
+                    '张家界': 110.47, '宜昌': 111.28, '襄阳': 112.14, '荆州': 112.23,
+                    '黄冈': 114.87, '孝感': 113.91, '咸宁': 114.28, '恩施': 109.48,
+                    '十堰': 110.79, '随州': 113.37, '荆门': 112.19, '鄂州': 114.89,
+                    '开封': 114.30, '洛阳': 112.45, '平顶山': 113.19, '安阳': 114.35,
+                    '鹤壁': 114.17, '新乡': 113.85, '焦作': 113.21, '濮阳': 115.03,
+                    '许昌': 113.81, '漯河': 114.01, '三门峡': 111.20, '南阳': 112.52,
+                    '商丘': 115.64, '信阳': 114.07, '周口': 114.64, '驻马店': 114.02,
+                    '保定': 115.46, '张家口': 114.88, '承德': 117.93, '唐山': 118.18,
+                    '廊坊': 116.70, '沧州': 116.83, '衡水': 115.68, '邢台': 114.50,
+                    '邯郸': 114.47, '大同': 113.29, '阳泉': 113.57, '长治': 113.11,
+                    '晋城': 112.83, '朔州': 112.43, '晋中': 112.75, '运城': 110.98,
+                    '忻州': 112.73, '临汾': 111.51, '吕梁': 111.13, '包头': 109.84,
+                    '乌海': 106.82, '赤峰': 118.87, '通辽': 122.26, '鄂尔多斯': 109.78,
+                    '呼伦贝尔': 119.76, '巴彦淖尔': 107.42, '乌兰察布': 113.11,
+                    '鞍山': 122.99, '抚顺': 123.92, '本溪': 123.76, '丹东': 124.35,
+                    '锦州': 121.12, '营口': 122.23, '阜新': 121.65, '辽阳': 123.17,
+                    '盘锦': 122.06, '铁岭': 123.84, '朝阳': 120.45, '葫芦岛': 120.83,
+                    '吉林': 126.55, '四平': 124.35, '辽源': 125.13, '通化': 125.93,
+                    '白山': 126.42, '松原': 124.81, '白城': 122.83, '齐齐哈尔': 123.95,
+                    '鸡西': 130.96, '鹤岗': 130.27, '双鸭山': 131.15, '大庆': 125.03,
+                    '伊春': 128.90, '佳木斯': 130.36, '七台河': 130.95, '牡丹江': 129.60,
+                    '黑河': 127.48, '绥化': 126.98, '银川': 106.27, '石嘴山': 106.38,
+                    '吴忠': 106.19, '固原': 106.28, '中卫': 105.19, '兰州': 103.73,
+                    '嘉峪关': 98.28, '金昌': 102.18, '白银': 104.17, '天水': 105.72,
+                    '武威': 102.63, '张掖': 100.45, '平凉': 106.67, '酒泉': 98.51,
+                    '庆阳': 107.63, '定西': 104.61, '陇南': 104.92, '临夏': 103.21,
+                    '西宁': 101.74, '海东': 102.10, '海北': 100.90, '黄南': 102.01,
+                    '海南': 100.62, '果洛': 100.24, '玉树': 97.01, '海西': 97.37,
+                    '乌鲁木齐': 87.68, '克拉玛依': 84.86, '吐鲁番': 89.18, '哈密': 93.51,
+                    '昌吉': 87.30, '博尔塔拉': 82.06, '巴音郭楞': 86.14, '阿克苏': 80.26,
+                    '克孜勒苏': 76.16, '喀什': 75.98, '和田': 79.92, '伊犁': 81.32,
+                    '塔城': 82.98, '阿勒泰': 88.12, '石河子': 86.04, '阿拉尔': 81.28,
+                    '图木舒克': 79.13, '五家渠': 87.54, '北屯': 87.80, '铁门关': 85.67,
+                    '双河': 82.35, '可克达拉': 80.99, '昆玉': 79.91, '胡杨河': 84.77
                 },
                 
-                // 获取月柱（简化版，不考虑节气）
-                getMonthGanzhi: function(year, month, dayGanIndex) {
-                    // 使用五虎遁：甲己之年丙作首，乙庚之年戊为头，丙辛之年寻庚起，丁壬壬位顺行流，戊癸甲寅好追求
-                    const monthMap = [
-                        { month: 2, gan: 2 }, // 寅月（正月）丙
-                        { month: 3, gan: 3 }, // 卯月 丁
-                        { month: 4, gan: 4 }, // 辰月 戊
-                        { month: 5, gan: 5 }, // 巳月 己
-                        { month: 6, gan: 6 }, // 午月 庚
-                        { month: 7, gan: 7 }, // 未月 辛
-                        { month: 8, gan: 8 }, // 申月 壬
-                        { month: 9, gan: 9 }, // 酉月 癸
-                        { month: 10, gan: 0 }, // 戌月 甲
-                        { month: 11, gan: 1 }, // 亥月 乙
-                        { month: 12, gan: 2 }, // 子月 丙
-                        { month: 1, gan: 3 } // 丑月 丁
-                    ];
+                // 获取城市经度（支持模糊匹配）
+                getLongitude: function(cityName) {
+                    if (!cityName) return null;
                     
-                    const yearGanIndex = this.getYearGanzhi(year).ganIndex;
-                    let startGanIndex;
-                    // 根据年干确定正月天干
-                    if (yearGanIndex === 0 || yearGanIndex === 5) startGanIndex = 2; // 甲己年 丙
-                    else if (yearGanIndex === 1 || yearGanIndex === 6) startGanIndex = 4; // 乙庚年 戊
-                    else if (yearGanIndex === 2 || yearGanIndex === 7) startGanIndex = 6; // 丙辛年 庚
-                    else if (yearGanIndex === 3 || yearGanIndex === 8) startGanIndex = 8; // 丁壬年 壬
-                    else startGanIndex = 0; // 戊癸年 甲
-                    
-                    const monthIndex = month === 1 ? 11 : month - 2; // 调整月份顺序
-                    const ganIndex = (startGanIndex + monthIndex) % 10;
-                    const zhiIndex = month === 1 ? 1 : (month + 1) % 12; // 调整地支
-                    
-                    return {
-                        ganzhi: this.tiangan[ganIndex] + this.dizhi[zhiIndex],
-                        gan: this.tiangan[ganIndex],
-                        zhi: this.dizhi[zhiIndex],
-                        ganIndex: ganIndex,
-                        zhiIndex: zhiIndex
-                    };
-                },
-                
-                // 获取日柱（简化算法，实际应该用复杂公式）
-                getDayGanzhi: function(year, month, day) {
-                    // 使用简化的日期算法（1900-2100年间相对准确）
-                    // 基准：1900年1月31日是甲午日
-                    const baseDate = new Date(1900, 0, 31);
-                    const targetDate = new Date(year, month - 1, day);
-                    const diffDays = Math.floor((targetDate - baseDate) / (24 * 60 * 60 * 1000));
-                    
-                    const ganzhiIndex = diffDays % 60;
-                    const ganIndex = ganzhiIndex % 10;
-                    const zhiIndex = ganzhiIndex % 12;
-                    
-                    return {
-                        ganzhi: this.tiangan[ganIndex] + this.dizhi[zhiIndex],
-                        gan: this.tiangan[ganIndex],
-                        zhi: this.dizhi[zhiIndex],
-                        ganIndex: ganIndex,
-                        zhiIndex: zhiIndex
-                    };
-                },
-                
-                // 获取时柱
-                getHourGanzhi: function(hour, dayGanIndex) {
-                    // 五鼠遁：甲己还加甲，乙庚丙作初，丙辛从戊起，丁壬庚子居，戊癸起壬子
-                    const hourIndex = Math.floor((hour + 1) / 2) % 12; // 时辰地支索引
-                    
-                    let startGanIndex;
-                    if (dayGanIndex === 0 || dayGanIndex === 5) startGanIndex = 0; // 甲己日 甲
-                    else if (dayGanIndex === 1 || dayGanIndex === 6) startGanIndex = 2; // 乙庚日 丙
-                    else if (dayGanIndex === 2 || dayGanIndex === 7) startGanIndex = 4; // 丙辛日 戊
-                    else if (dayGanIndex === 3 || dayGanIndex === 8) startGanIndex = 6; // 丁壬日 庚
-                    else startGanIndex = 8; // 戊癸日 壬
-                    
-                    const ganIndex = (startGanIndex + hourIndex) % 10;
-                    
-                    return {
-                        ganzhi: this.tiangan[ganIndex] + this.dizhi[hourIndex],
-                        gan: this.tiangan[ganIndex],
-                        zhi: this.dizhi[hourIndex],
-                        ganIndex: ganIndex,
-                        zhiIndex: hourIndex
-                    };
-                },
-                
-                // 生成大运（简化版）
-                generateDayun: function(year, gender, month, dayGanIndex) {
-                    const dayun = [];
-                    const startYear = year + 8; // 简化：8岁起运
-                    
-                    // 根据年干和性别确定顺逆
-                    const yearGanIndex = this.getYearGanzhi(year).ganIndex;
-                    const isYang = yearGanIndex % 2 === 0; // 阳年
-                    const isMale = gender === 'male';
-                    const isForward = (isYang && isMale) || (!isYang && !isMale);
-                    
-                    // 获取月柱作为起点
-                    const monthGanzhi = this.getMonthGanzhi(year, month, dayGanIndex);
-                    let currentGanIndex = monthGanzhi.ganIndex;
-                    let currentZhiIndex = monthGanzhi.zhiIndex;
-                    
-                    for (let i = 0; i < 8; i++) {
-                        if (isForward) {
-                            currentGanIndex = (currentGanIndex + 1) % 10;
-                            currentZhiIndex = (currentZhiIndex + 1) % 12;
-                        } else {
-                            currentGanIndex = (currentGanIndex - 1 + 10) % 10;
-                            currentZhiIndex = (currentZhiIndex - 1 + 12) % 12;
-                        }
-                        
-                        dayun.push({
-                            getGanZhi: function() {
-                                return BaziEngine.tiangan[this.ganIndex] + BaziEngine.dizhi[this.zhiIndex];
-                            },
-                            getStartAge: function() {
-                                return 8 + i * 10;
-                            },
-                            getStartYear: function() {
-                                return startYear + i * 10;
-                            },
-                            ganIndex: currentGanIndex,
-                            zhiIndex: currentZhiIndex
-                        });
+                    // 直接匹配
+                    if (this.cityLongitudes[cityName]) {
+                        return this.cityLongitudes[cityName];
                     }
                     
-                    return dayun;
+                    // 模糊匹配（包含关系）
+                    for (let city in this.cityLongitudes) {
+                        if (cityName.includes(city) || city.includes(cityName)) {
+                            return this.cityLongitudes[city];
+                        }
+                    }
+                    
+                    return null;
+                },
+                
+                // 计算真太阳时
+                calculate: function(year, month, day, hour, minute, city, useSummerTime = false) {
+                    // 验证输入
+                    if (!city) {
+                        throw new Error('请输入出生城市');
+                    }
+                    
+                    // 获取城市经度
+                    const longitude = this.getLongitude(city);
+                    if (!longitude) {
+                        throw new Error(`未找到城市"${city}"的经度信息，请选择附近主要城市`);
+                    }
+                    
+                    // 处理夏令时（1986-1992年中国部分地区实行）
+                    let adjustedHour = hour;
+                    if (useSummerTime) {
+                        adjustedHour -= 1; // 夏令时拨快1小时，所以要减回
+                    }
+                    
+                    // 计算时差：东经120°为标准，每差1°加减4分钟
+                    const baseLongitude = 120.0;
+                    const diffMinutes = (longitude - baseLongitude) * 4;
+                    
+                    // 计算真太阳时（分钟数）
+                    let totalMinutes = adjustedHour * 60 + minute + diffMinutes;
+                    
+                    // 处理跨日情况
+                    let newDay = day;
+                    let newMonth = month;
+                    let newYear = year;
+                    let newHour = Math.floor(totalMinutes / 60);
+                    let newMinute = Math.round(totalMinutes % 60);
+                    
+                    // 处理分钟四舍五入到60的情况
+                    if (newMinute >= 60) {
+                        newMinute -= 60;
+                        newHour += 1;
+                    } else if (newMinute < 0) {
+                        newMinute += 60;
+                        newHour -= 1;
+                    }
+                    
+                    // 处理小时跨日
+                    if (newHour >= 24) {
+                        newHour -= 24;
+                        newDay += 1;
+                    } else if (newHour < 0) {
+                        newHour += 24;
+                        newDay -= 1;
+                    }
+                    
+                    // 处理月份跨月（简化处理，使用Date对象处理复杂边界）
+                    const date = new Date(Date.UTC(year, month - 1, newDay, newHour, newMinute));
+                    newYear = date.getUTCFullYear();
+                    newMonth = date.getUTCMonth() + 1;
+                    newDay = date.getUTCDate();
+                    
+                    // 获取时辰
+                    const shichen = this.getShichen(newHour);
+                    
+                    return {
+                        // 校正后的时间
+                        year: newYear,
+                        month: newMonth,
+                        day: newDay,
+                        hour: newHour,
+                        minute: newMinute,
+                        shichen: shichen,
+                        
+                        // 校正信息
+                        longitude: longitude,
+                        diffMinutes: diffMinutes.toFixed(1),
+                        originalHour: hour,
+                        originalMinute: minute,
+                        city: city,
+                        
+                        // 格式化显示
+                        formatted: `${newYear}年${newMonth}月${newDay}日 ${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')} (${shichen})`,
+                        diffFormatted: diffMinutes > 0 ? `+${diffMinutes.toFixed(1)}分钟` : `${diffMinutes.toFixed(1)}分钟`
+                    };
+                },
+                
+                // 获取时辰名称
+                getShichen: function(hour) {
+                    if (hour >= 23 || hour < 1) return '子时';
+                    if (hour >= 1 && hour < 3) return '丑时';
+                    if (hour >= 3 && hour < 5) return '寅时';
+                    if (hour >= 5 && hour < 7) return '卯时';
+                    if (hour >= 7 && hour < 9) return '辰时';
+                    if (hour >= 9 && hour < 11) return '巳时';
+                    if (hour >= 11 && hour < 13) return '午时';
+                    if (hour >= 13 && hour < 15) return '未时';
+                    if (hour >= 15 && hour < 17) return '申时';
+                    if (hour >= 17 && hour < 19) return '酉时';
+                    if (hour >= 19 && hour < 21) return '戌时';
+                    if (hour >= 21 && hour < 23) return '亥时';
+                    return '未知';
+                },
+                
+                // 判断是否需要夏令时（根据年份和地区）
+                shouldUseSummerTime: function(year, month, city) {
+                    // 中国夏令时：1986-1992年，4月中旬到9月中旬
+                    if (year < 1986 || year > 1992) return false;
+                    
+                    // 简化判断：5月到8月基本都有夏令时
+                    if (month >= 5 && month <= 8) return true;
+                    
+                    // 4月和9月需要具体日期判断（简化处理）
+                    if (month === 4) return true;  // 实际是从4月中旬开始
+                    if (month === 9) return true;  // 实际到9月中旬结束
+                    
+                    return false;
                 }
             };
-
-            // 应用主逻辑
+            
+            // ==================== 八字分析引擎 ====================
+            const BaziAnalyzer = {
+                // 十神关系表
+                shishenMap: [
+                    ['比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印'],
+                    ['劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀', '正印', '偏印'],
+                    ['食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印', '比肩', '劫财'],
+                    ['伤官', '食神', '正财', '偏财', '正官', '七杀', '正印', '偏印', '劫财', '比肩'],
+                    ['偏财', '正财', '七杀', '正官', '偏印', '正印', '比肩', '劫财', '食神', '伤官'],
+                    ['正财', '偏财', '正官', '七杀', '正印', '偏印', '劫财', '比肩', '伤官', '食神'],
+                    ['七杀', '正官', '偏印', '正印', '比肩', '劫财', '食神', '伤官', '偏财', '正财'],
+                    ['正官', '七杀', '正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财'],
+                    ['偏印', '正印', '比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官'],
+                    ['正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀']
+                ],
+                
+                // 五行对应关系
+                wuxingFromGan: ['木', '木', '火', '火', '土', '土', '金', '金', '水', '水'],
+                wuxingFromZhi: ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'],
+                
+                // 生克关系
+                shengMap: {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'},
+                keMap: {'木':'土', '火':'金', '土':'水', '金':'木', '水':'火'},
+                beikeMap: {'木':'金', '火':'水', '土':'木', '金':'火', '水':'土'},
+                
+                getShiShen: function(dayIndex, otherIndex) {
+                    return this.shishenMap[dayIndex][otherIndex];
+                },
+                
+                getWuxingFromGan: function(index) {
+                    return this.wuxingFromGan[index];
+                },
+                
+                getWuxingFromZhi: function(index) {
+                    return this.wuxingFromZhi[index];
+                },
+                
+                // ==================== 详细分析函数（每个板块200字以上）====================
+                
+                // 1. 总论分析
+                analyzeSummary: function(dayGanName, dayWuXing, wuxingCount, shensha, gender, dayGanIndex) {
+                    let text = `【命主总论】日主为<strong>${dayGanName}</strong>，五行属<strong>${dayWuXing}</strong>。`;
+                    
+                    // 日主强弱分析（150字）
+                    const selfCount = wuxingCount[dayWuXing] || 0;
+                    const shengWoCount = wuxingCount[this.shengMap[dayWuXing]] || 0;
+                    const totalStrong = selfCount + shengWoCount;
+                    
+                    text += `八字中${dayWuXing}元素出现${selfCount}次，生扶${dayWuXing}的五行出现${shengWoCount}次，`;
+                    
+                    if (totalStrong >= 5) {
+                        text += '生扶力量强劲，命主身旺，精力充沛，抗压能力强，能担大任。身旺者往往性格独立，不喜受人约束，有开拓精神，适合创业或担任领导职务。但身旺太过则易固执己见，听不进他人劝告，需注意人际关系。';
+                    } else if (totalStrong >= 3) {
+                        text += '生扶力量适中，命主中和，性格平和，适应能力强，能屈能伸。身中和者往往福气较好，一生平顺，遇事能得贵人相助，适合在稳定的环境中发展，也能把握机遇。';
+                    } else {
+                        text += '生扶力量不足，命主身弱，心思细腻，敏感多思，善于借助外力。身弱者往往贵人运较好，适合与人合作，不宜单打独斗，在团队中能发挥出色。需注意身体保养，增强自信。';
+                    }
+                    
+                    // 五行平衡分析（150字）
+                    const missingWuxing = [];
+                    const excessWuxing = [];
+                    for (let wx in wuxingCount) {
+                        if (wuxingCount[wx] === 0) missingWuxing.push(wx);
+                        if (wuxingCount[wx] >= 3) excessWuxing.push(wx);
+                    }
+                    
+                    if (missingWuxing.length > 0) {
+                        text += ` 八字中缺少：${missingWuxing.join('、')}。`;
+                        if (missingWuxing.includes('木')) text += '缺木者肝胆功能需注意，为人较缺乏弹性；';
+                        if (missingWuxing.includes('火')) text += '缺火者血液循环需留意，性格偏冷；';
+                        if (missingWuxing.includes('土')) text += '缺土者脾胃需调理，稳定性稍差；';
+                        if (missingWuxing.includes('金')) text += '缺金者呼吸系统需保养，决断力稍弱；';
+                        if (missingWuxing.includes('水')) text += '缺水者肾脏需养护，智慧需后天培养。';
+                    }
+                    
+                    if (excessWuxing.length > 0) {
+                        text += ` 八字中过旺：${excessWuxing.join('、')}。`;
+                        if (excessWuxing.includes('木')) text += '木旺者仁慈但易固执，需防肝胆疾病；';
+                        if (excessWuxing.includes('火')) text += '火旺者热情但易急躁，需防心脑血管；';
+                        if (excessWuxing.includes('土')) text += '土旺者稳重但易保守，需防脾胃问题；';
+                        if (excessWuxing.includes('金')) text += '金旺者果决但易刚硬，需防呼吸系统；';
+                        if (excessWuxing.includes('水')) text += '水旺者智慧但易多虑，需防肾脏问题。';
+                    }
+                    
+                    // 神煞分析（100字）
+                    if (shensha.length > 0) {
+                        text += ` 命带神煞：${shensha.join('、')}。`;
+                        if (shensha.includes('天乙贵人')) text += '天乙贵人为最大的吉神，一生逢凶化吉，危难之时总有贵人相助。';
+                        if (shensha.includes('文昌贵人')) text += '文昌入命，学业聪慧，有艺术天赋，利于考试、职称晋升。';
+                        if (shensha.includes('桃花')) text += '桃花星显，异性缘佳，人缘好，但需防感情纠葛。';
+                        if (shensha.includes('驿马')) text += '驿马星动，宜动中求财，适合外出发展，不宜守在家乡。';
+                    }
+                    
+                    return text;
+                },
+                
+                // 2. 财运分析
+                analyzeWealth: function(dayWuXing, wuxingCount, shensha, dayGanIndex, monthGan, yearGan, hourGan) {
+                    // 财星分析
+                    const wealthWx = this.keMap[dayWuXing]; // 我克者为财
+                    const wealthCount = wuxingCount[wealthWx] || 0;
+                    
+                    let text = `【财运分析】您的财星五行属<strong>${wealthWx}</strong>，八字中出现${wealthCount}次。`;
+                    
+                    // 财星旺衰分析（150字）
+                    if (wealthCount >= 3) {
+                        text += '财星非常旺盛，命主财运亨通，求财容易，有经商天赋。但财多身弱的情况下，容易为财所累，需防财多身弱，反而因财致祸。建议在求财的同时注意身体健康，不要过度劳累。';
+                    } else if (wealthCount === 2) {
+                        text += '财星适中，财运平稳，通过努力可得相应回报。命主有理财观念，能合理规划财务，不易出现大起大落。适合从事稳定的投资理财，或在专业领域深耕细作，财运会随着年龄增长而稳步提升。';
+                    } else if (wealthCount === 1) {
+                        text += '财星有根，财运尚可，但需抓住机遇。命主不是天生富贵之人，但通过后天努力和学习，能够积累可观的财富。特别适合在中年之后发展财运，早期宜多积累经验和人脉。';
+                    } else {
+                        text += '财星不显，不宜单打独斗求财，宜与人合作或专精技术。命主对金钱的敏感度可能不高，但往往有其他方面的天赋，如艺术、技术、学术等，可通过这些特长转化为财富。';
+                    }
+                    
+                    // 财星位置分析（150字）
+                    const yearShishen = this.getShiShen(dayGanIndex, yearGan.getIndex());
+                    const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
+                    const hourShishen = this.getShiShen(dayGanIndex, hourGan.getIndex());
+                    
+                    if (yearShishen.includes('财')) {
+                        text += ` 年柱见${yearShishen}，可得祖上或长辈之财，家庭背景较好，早年家境殷实。但年柱为早运，需防坐吃山空，仍需自己努力。`;
+                    }
+                    
+                    if (monthShishen.includes('财')) {
+                        text += ` 月柱见${monthShishen}，青年时期财运明显，适合在25-45岁之间发展事业，财运亨通。月柱为父母宫，也可能通过父母或社会关系获得财富。`;
+                    }
+                    
+                    if (hourShishen.includes('财')) {
+                        text += ` 时柱见${hourShishen}，晚年财运不错，子女有能力，可得子女之财。时柱也为事业的最终成就，财富在晚年达到顶峰。`;
+                    }
+                    
+                    // 财星组合分析（100字）
+                    if (yearShishen.includes('财') && monthShishen.includes('财')) {
+                        text += ' 年、月两柱皆见财星，财气贯通，一生财运稳定，但需防财多身弱，反而为财所困。';
+                    }
+                    
+                    if (monthShishen.includes('财') && hourShishen.includes('财')) {
+                        text += ' 月、时两柱皆见财星，中年到晚年的财运都非常好，财富能持续积累，晚年富足。';
+                    }
+                    
+                    return text;
+                },
+                
+                // 3. 事业分析
+                analyzeCareer: function(dayWuXing, wuxingCount, dayZhi, monthZhi, gender, dayGanIndex, monthGan, yearGan) {
+                    const guanShaWx = this.beikeMap[dayWuXing]; // 克我者为官杀
+                    const guanShaCount = wuxingCount[guanShaWx] || 0;
+                    const yinWx = this.shengMap[dayWuXing]; // 生我者为印
+                    const yinCount = wuxingCount[yinWx] || 0;
+                    
+                    let text = `【事业分析】官杀代表事业、权力和压力，五行属<strong>${guanShaWx}</strong>，八字中出现${guanShaCount}次。`;
+                    
+                    // 官杀分析（150字）
+                    if (guanShaCount >= 3) {
+                        text += '官杀过旺，事业压力大，责任重，但管理能力强，适合担任领导职务。命主在工作中容易操心劳碌，事必躬亲，需学会放权和减压。官杀旺也代表事业心强，不甘人后，有强烈的进取精神。';
+                    } else if (guanShaCount === 2) {
+                        text += '官杀适中，事业心强，能有成就，适合在体制内或大企业发展。命主对事业有规划，能按部就班地实现目标，中年之后事业有成，社会地位较高。';
+                    } else if (guanShaCount === 1) {
+                        text += '官杀有根，事业平稳，适合专业技术人员或自由职业者。命主不喜欢被过多约束，更适合在专业领域发展，成为行业专家，通过技术或专业能力获得认可。';
+                    } else {
+                        text += '官杀不显，不喜被管，适合自由职业、创业或艺术创作。命主有独立精神，不愿受人驱使，若能找到适合自己的发展方向，也能取得不俗成就。';
+                    }
+                    
+                    // 印星分析（150字）
+                    text += ` 印星代表贵人、学习和支持，五行属<strong>${yinWx}</strong>，八字中出现${yinCount}次。`;
+                    if (yinCount > 2) {
+                        text += '印星旺盛，多得贵人扶持，学习能力强，有学历优势。命主在求学阶段表现优异，工作中也常得长辈提携，一生贵人运强，遇事能逢凶化吉。';
+                    } else if (yinCount === 2) {
+                        text += '印星适中，有一定贵人运，通过学习能提升事业。命主应注重持续学习，不断提升自己，贵人会在关键时刻出现。';
+                    } else if (yinCount === 1) {
+                        text += '印星有根，贵人不多但关键，需自己努力争取。命主的事业发展主要靠自己打拼，但在关键时刻会有贵人相助。';
+                    } else {
+                        text += '印星不显，贵人运较弱，凡事需靠自己，独立性强。命主天生独立，不喜依赖他人，通过自身努力也能成功，但过程会比较辛苦。';
+                    }
+                    
+                    // 事业建议（100字）
+                    const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
+                    if (monthShishen === '正官' || monthShishen === '七杀') {
+                        text += ` 月柱为${monthShishen}，适合在35岁前确定事业方向，稳定发展。`;
+                    } else if (monthShishen === '正印' || monthShishen === '偏印') {
+                        text += ` 月柱为${monthShishen}，适合从事教育、文化、研究类工作，能发挥所长。`;
+                    } else if (monthShishen.includes('财')) {
+                        text += ` 月柱为${monthShishen}，适合从商或从事金融、经济类工作，财运与事业相辅相成。`;
+                    }
+                    
+                    return text;
+                },
+                
+                // 4. 婚姻分析
+                analyzeMarriage: function(dayGanName, dayZhi, shensha, gender, dayZhiIndex, dayGanIndex) {
+                    const dayZhiName = dayZhi.getName();
+                    const dayZhiWx = this.wuxingFromZhi[dayZhiIndex];
+                    
+                    let text = `【婚姻分析】日支为配偶宫，坐<strong>${dayZhiName}</strong>，五行属<strong>${dayZhiWx}</strong>。`;
+                    
+                    // 夫妻宫十神分析（150字）
+                    const spouseShishen = this.getShiShen(dayGanIndex, dayZhiIndex); // 简化：地支也按藏干考虑
+                    text += `配偶宫十神为${spouseShishen}，`;
+                    
+                    if (spouseShishen === '正官' || spouseShishen === '七杀') {
+                        if (gender === 'female') {
+                            text += '代表配偶有能力、有担当，对命主有约束力，婚姻中对方占主导地位。适合晚婚，婚后生活稳定，配偶能成为依靠。';
+                        } else {
+                            text += '代表配偶性格强势，有一定事业心，婚姻中需要互相尊重。男命配偶官杀旺，妻子可能比较能干，但也容易有压力。';
+                        }
+                    } else if (spouseShishen === '正财' || spouseShishen === '偏财') {
+                        if (gender === 'male') {
+                            text += '代表配偶贤惠、顾家，对命主有帮助，婚姻美满。男命财星为妻，坐财星代表妻子家庭背景好或自身能力强。';
+                        } else {
+                            text += '代表配偶有经济头脑，善于理财，婚姻中财务稳定。女命财星旺，丈夫会赚钱，家庭经济条件好。';
+                        }
+                    } else if (spouseShishen === '正印' || spouseShishen === '偏印') {
+                        text += '代表配偶仁慈、包容，能包容命主的缺点，婚姻和谐。配偶像长辈一样照顾命主，年龄可能稍大。';
+                    } else if (spouseShishen === '食神' || spouseShishen === '伤官') {
+                        text += '代表配偶聪明、有才华，但也可能比较挑剔，婚姻中需要多沟通。女命伤官旺需注意言辞，避免伤害对方。';
+                    } else if (spouseShishen === '比肩' || spouseShishen === '劫财') {
+                        text += '代表配偶与命主性格相似，既是伴侣也是朋友，但也容易有争执。婚姻中需注意互相谦让，避免争强好胜。';
+                    }
+                    
+                    // 夫妻宫冲合分析（100字）
+                    const chongMap = [6, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // 简单对冲关系
+                    if (dayZhiIndex === chongMap[dayZhiIndex]) {
+                        text += ' 夫妻宫逢冲，婚姻易有变动，需多沟通包容。冲则动，可能两地分居或婚姻有波折，但若处理得当，也能激发婚姻活力。';
+                    } else {
+                        text += ' 夫妻宫稳定，无冲无破，婚姻较和美，家庭生活稳定。';
+                    }
+                    
+                    // 桃花星分析（100字）
+                    if (shensha.includes('桃花')) {
+                        text += ' 命带桃花，异性缘佳，但也需防烂桃花影响婚姻。命主魅力足，社交能力强，但要懂得把握分寸，珍惜眼前人。';
+                    }
+                    
+                    // 婚姻建议（100字）
+                    text += ' 婚姻建议：相互尊重是婚姻的基础，多沟通、多包容。';
+                    if (gender === 'male') {
+                        text += ' 男命以财星为妻，婚后要多关心妻子的感受，在经济上给予支持。';
+                    } else {
+                        text += ' 女命以官星为夫，婚后要支持丈夫的事业，在情感上多交流。';
+                    }
+                    
+                    return text;
+                },
+                
+                // 5. 子女分析
+                analyzeChildren: function(dayGanIndex, monthGan, hourGan, dayGanName) {
+                    const foodShen = ['食神', '伤官'];
+                    const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
+                    const hourShishen = this.getShiShen(dayGanIndex, hourGan.getIndex());
+                    
+                    let text = `【子女分析】子女星为食神和伤官，代表命主的子女缘分和教育方式。`;
+                    
+                    // 食伤位置分析（150字）
+                    if (foodShen.includes(monthShishen) && foodShen.includes(hourShishen)) {
+                        text += ` 月柱见${monthShishen}，时柱见${hourShishen}，子女缘分深厚，子息运强。命主不仅会有子女，而且与子女缘分很好，子女有出息，能得子女之福。月柱为青年运，时柱为晚年运，说明子女从青年到晚年都给予命主支持。`;
+                    } else if (foodShen.includes(monthShishen)) {
+                        text += ` 月柱见${monthShishen}，较早得子，子女在命主青年时期给予快乐。命主会比较早婚早育，子女聪明活泼，与命主关系融洽，但子女成年后可能独立发展。`;
+                    } else if (foodShen.includes(hourShishen)) {
+                        text += ` 时柱见${hourShishen}，晚年得子或子女在晚年给予支持。命主可能晚婚晚育，但子女孝顺，能在命主晚年时提供帮助和陪伴，是晚年的依靠。`;
+                    } else {
+                        text += ` 八字中食伤星不显，子息缘分较浅。但这并不意味着没有子女，而是需要多做善事培福，积德行善，子女缘分自然来。`;
+                    }
+                    
+                    // 子女数量分析（100字）
+                    const foodCount = [monthShishen, hourShishen].filter(s => foodShen.includes(s)).length;
+                    if (foodCount === 2) {
+                        text += ' 子女缘分深厚，可能有两个或以上子女，子女成才。';
+                    } else if (foodCount === 1) {
+                        text += ' 子女缘分正常，一般有一个子女，需用心培养。';
+                    } else {
+                        text += ' 子女缘分较浅，可能子女较少或与子女缘分较薄，需多加珍惜。';
+                    }
+                    
+                    // 子女性格分析（100字）
+                    if (monthShishen === '食神' || hourShishen === '食神') {
+                        text += ' 食神代表子女温和、有福气、艺术天赋高，适合培养艺术特长。';
+                    } else if (monthShishen === '伤官' || hourShishen === '伤官') {
+                        text += ' 伤官代表子女聪明、有才华、个性强，需因材施教，发挥特长。';
+                    }
+                    
+                    // 培养建议（100字）
+                    text += ` 培养建议：子女教育重在因材施教，多鼓励、少批评。命主为${dayGanName}日主，教育子女时要根据子女的个性特点，${dayGanName === '甲' ? '多给自由空间' : dayGanName === '丙' ? '多鼓励探索' : '注重培养规矩'}。`;
+                    
+                    return text;
+                },
+                
+                // 6. 健康分析
+                analyzeHealth: function(dayWuXing, wuxingCount, shensha, dayGanName) {
+                    let text = `【健康分析】日主五行属${dayWuXing}，代表命主的先天体质和易感疾病。`;
+                    
+                    // 根据五行判断易患疾病（200字）
+                    if (dayWuXing === '木') {
+                        text += ' 木主肝胆、筋骨、神经系统。命主需注意肝胆健康，避免长期熬夜、饮酒过度。易有颈椎、腰椎问题，要注意坐姿和运动方式。神经方面易敏感，要学会调节情绪，避免压力过大。春季是养肝好时节，可多食绿色蔬菜，适当运动。';
+                    } else if (dayWuXing === '火') {
+                        text += ' 火主心脏、血液循环、眼睛。命主需注意心脑血管健康，避免情绪激动和过度劳累。易有高血压、心悸等问题，要定期体检。眼睛也需注意，避免长时间用眼。夏季要注意防暑降温，保持心情平和，多喝水。';
+                    } else if (dayWuXing === '土') {
+                        text += ' 土主脾胃、肌肉、皮肤。命主需注意消化系统健康，饮食要有规律，避免暴饮暴食。易有胃病、便秘等问题，要注意饮食卫生。皮肤方面易敏感，要注意保湿和防晒。长夏季节要注意健脾养胃，少食生冷。';
+                    } else if (dayWuXing === '金') {
+                        text += ' 金主肺、大肠、呼吸系统。命主需注意呼吸系统健康，避免吸烟和空气污染。易有哮喘、咳嗽、皮肤干燥等问题，要注意保暖。秋季是养肺好时节，可多食白色食物，如梨、银耳等。';
+                    } else if (dayWuXing === '水') {
+                        text += ' 水主肾、膀胱、骨骼。命主需注意肾脏健康，避免过度劳累和熬夜。易有腰膝酸软、泌尿系统问题，要注意保暖。冬季是养肾好时节，可多食黑色食物，如黑豆、黑芝麻等。';
+                    }
+                    
+                    // 五行过旺过弱分析（150字）
+                    const excess = [];
+                    const deficient = [];
+                    for (let wx in wuxingCount) {
+                        if (wuxingCount[wx] > 3) excess.push(wx);
+                        if (wuxingCount[wx] === 0) deficient.push(wx);
+                    }
+                    
+                    if (excess.length > 0) {
+                        text += ` 八字中${excess.join('、')}元素过旺，需注意相关脏腑：`;
+                        if (excess.includes('木')) text += '木旺克土，需防脾胃问题；';
+                        if (excess.includes('火')) text += '火旺克金，需防呼吸系统问题；';
+                        if (excess.includes('土')) text += '土旺克水，需防肾脏问题；';
+                        if (excess.includes('金')) text += '金旺克木，需防肝胆问题；';
+                        if (excess.includes('水')) text += '水旺克火，需防心脏问题；';
+                    }
+                    
+                    if (deficient.length > 0) {
+                        text += ` 八字中缺少${deficient.join('、')}元素，相关脏腑功能偏弱，需后天调理：`;
+                        if (deficient.includes('木')) text += '缺木宜多吃绿色蔬菜，养肝血；';
+                        if (deficient.includes('火')) text += '缺火宜多晒太阳，补心气；';
+                        if (deficient.includes('土')) text += '缺土宜规律饮食，健脾胃；';
+                        if (deficient.includes('金')) text += '缺金宜深呼吸，养肺气；';
+                        if (deficient.includes('水')) text += '缺水宜多喝水，补肾精；';
+                    }
+                    
+                    // 养生建议（100字）
+                    text += ' 养生建议：顺应四时，调养身心。春季养肝，夏季养心，长夏养脾，秋季养肺，冬季养肾。保持规律作息，适度运动，心态平和，方能健康长寿。';
+                    
+                    return text;
+                },
+                
+                // 7. 父母分析
+                analyzeParents: function(yearGan, monthGan, dayGanIndex, yearZhi, monthZhi) {
+                    const yearShishen = this.getShiShen(dayGanIndex, yearGan.getIndex());
+                    const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
+                    
+                    let text = `【父母分析】年柱为祖上，月柱为父母宫，代表父母和原生家庭。`;
+                    
+                    // 父母十神分析（200字）
+                    if (yearShishen.includes('印') || monthShishen.includes('印')) {
+                        text += ` 年月见印星（${yearShishen.includes('印') ? yearShishen : ''} ${monthShishen.includes('印') ? monthShishen : ''}），父母对命主助力较大，能得庇护。印星代表长辈、贵人，命主从小受到父母的关爱和教育，家庭氛围温馨，父母在学业和事业上给予支持。特别适合继承家族事业或从事父母相关的行业。`;
+                    } else if (yearShishen.includes('财') || monthShishen.includes('财')) {
+                        text += ` 年月见财星（${yearShishen.includes('财') ? yearShishen : ''} ${monthShishen.includes('财') ? monthShishen : ''}），家庭经济条件较好，父母有能力。财星代表财富，命主出生在殷实之家，父母赚钱能力强，能提供良好的物质条件。但财星也代表父亲（对男命而言），父亲可能在命主成长过程中较为忙碌。`;
+                    } else if (yearShishen.includes('官') || monthShishen.includes('官')) {
+                        text += ` 年月见官杀（${yearShishen.includes('官') ? yearShishen : ''} ${monthShishen.includes('官') ? monthShishen : ''}），父母有一定社会地位，对命主要求严格。官杀代表权力和规矩，父母可能是公务员、管理者或严父慈母类型，对命主期望高，教育严格，培养命主有责任心。`;
+                    } else if (yearShishen.includes('食伤') || monthShishen.includes('食伤')) {
+                        text += ` 年月见食伤（${yearShishen.includes('食') || yearShishen.includes('伤') ? yearShishen : ''} ${monthShishen.includes('食') || monthShishen.includes('伤') ? monthShishen : ''}），父母开明，注重命主的个性发展。食伤代表才华和自由，父母不给孩子太多压力，鼓励发展兴趣爱好，家庭氛围轻松自由。`;
+                    } else {
+                        text += ` 年月十神为${yearShishen}、${monthShishen}，与父母缘分普通，需自己奋斗。命主可能较早独立，父母提供的助力有限，但也因此培养了独立自主的性格。`;
+                    }
+                    
+                    // 父母关系分析（100字）
+                    const yearWx = this.wuxingFromZhi[yearZhi.getIndex()];
+                    const monthWx = this.wuxingFromZhi[monthZhi.getIndex()];
+                    if (this.shengMap[yearWx] === monthWx) {
+                        text += ' 年柱地支生月柱地支，祖上对父母有帮助，家庭根基稳固。';
+                    } else if (this.keMap[yearWx] === monthWx) {
+                        text += ' 年柱地支克月柱地支，祖上与父母可能有代沟，需注意家庭关系。';
+                    }
+                    
+                    // 原生家庭影响（100字）
+                    text += ' 原生家庭对命主性格影响深远：';
+                    if (monthShishen.includes('印')) {
+                        text += '命主从父母处获得安全感和支持，性格较为温和，有依靠。';
+                    } else if (monthShishen.includes('财')) {
+                        text += '命主从父母处学到理财观念，对金钱有较好规划。';
+                    } else if (monthShishen.includes('官')) {
+                        text += '命主从父母处学到责任和规矩，做事有原则。';
+                    } else {
+                        text += '命主较早独立，性格自主性强，不依赖他人。';
+                    }
+                    
+                    return text;
+                },
+                
+                // 8. 田宅分析
+                analyzeHouse: function(shensha, dayZhiWx, wuxingCount) {
+                    let text = `【田宅房产分析】田宅宫看库与印，代表房产、居住环境和固定资产。`;
+                    
+                    // 根据五行判断购房运势（150字）
+                    const earthCount = wuxingCount['土'] || 0;
+                    text += ` 八字中土元素出现${earthCount}次，土代表房产和田地。`;
+                    if (earthCount >= 3) {
+                        text += '土旺之人房产运强，容易拥有多处房产，且多能保值增值。命主对房产有敏锐的嗅觉，善于投资不动产，能够通过房产积累财富。但土旺也需注意，可能因房产而过度操劳。';
+                    } else if (earthCount === 2) {
+                        text += '土气适中，房产运势平稳，通过努力能够拥有自己的住房。命主对房产有规划，会根据实际需求置业，不会盲目投资。';
+                    } else if (earthCount === 1) {
+                        text += '土气有根，有房产缘，但需努力争取。命主可能需要较长时间才能拥有理想的住房，但最终能实现置业目标。';
+                    } else {
+                        text += '土气不显，房产运势较弱，可能需要借助家人或伴侣的力量置业。命主对房产的需求不强，更注重居住的舒适度而非拥有权。';
+                    }
+                    
+                    // 神煞分析（150字）
+                    if (shensha.includes('华盖')) {
+                        text += ' 华盖入命，喜清静，适合独居或乡村置业。命主对居住环境要求高，喜欢安静、有文化氛围的地方，可能偏好郊区别墅或具有艺术气息的居所。';
+                    }
+                    if (shensha.includes('驿马')) {
+                        text += ' 驿马星动，适合在外地置业，或常搬家换房。命主可能因工作原因经常更换居住地，或在异乡安家，房产分布较广。';
+                    }
+                    if (shensha.includes('天乙贵人')) {
+                        text += ' 天乙贵人加持，买房时易得贵人帮助，能买到性价比高的房产。';
+                    }
+                    
+                    // 风水建议（100字）
+                    text += ' 风水建议：';
+                    if (dayZhiWx === '木') {
+                        text += '东方为旺方，宜多种绿植，增强生气。';
+                    } else if (dayZhiWx === '火') {
+                        text += '南方为旺方，宜多用暖色调，增强阳气。';
+                    } else if (dayZhiWx === '土') {
+                        text += '本地为旺方，宜稳重布局，增强稳定感。';
+                    } else if (dayZhiWx === '金') {
+                        text += '西方为旺方，宜简洁明亮，增强气场。';
+                    } else if (dayZhiWx === '水') {
+                        text += '北方为旺方，宜有流水景观，增强财运。';
+                    }
+                    
+                    return text;
+                },
+                
+                // 9. 官非诉讼分析
+                analyzeLegal: function(shensha, guanShaCount, dayGanName) {
+                    let text = `【官非诉讼分析】官非与刑冲破害相关，代表法律纠纷、是非口舌。`;
+                    
+                    // 官杀旺衰分析（150字）
+                    if (guanShaCount >= 3) {
+                        text += ` 官杀过旺（出现${guanShaCount}次），一生易有是非纠纷，需谨言慎行。命主性格刚强，容易与人发生冲突，特别是在事业竞争和利益分配上。法律意识要强，签订合同需谨慎，避免因一时疏忽惹上官非。`;
+                    } else if (guanShaCount === 2) {
+                        text += ` 官杀适中（出现${guanShaCount}次），有一定是非风险，但能通过智慧和沟通化解。命主在遇到纠纷时，懂得运用法律武器保护自己，也能通过协商解决问题。`;
+                    } else if (guanShaCount === 1) {
+                        text += ` 官杀有根（出现${guanShaCount}次），偶尔会有小是非，但不至于惹上官司。命主性格平和，不主动招惹是非，即使遇到纠纷也能和平解决。`;
+                    } else {
+                        text += ` 官杀不显（出现${guanShaCount}次），是非较少，一生平安。命主远离官非，生活简单，很少与人有法律纠纷，但也要注意不要因过于单纯而被人利用。`;
+                    }
+                    
+                    // 神煞分析（150字）
+                    if (shensha.includes('官符')) {
+                        text += ' 官符星现，有官非风险，特别是在中年时期。做事要遵纪守法，切勿心存侥幸。如有法律文书，建议请专业人士把关。';
+                    }
+                    if (shensha.includes('五鬼')) {
+                        text += ' 五鬼入命，易有小人是非，需防背后算计。工作中要注意人际关系，避免树敌，重要事情要有见证人。';
+                    }
+                    if (shensha.includes('天乙贵人')) {
+                        text += ' 天乙贵人可化解官非，遇法律问题能得贵人相助。但贵人只是辅助，关键还是要自己守法。';
+                    }
+                    
+                    // 预防建议（100字）
+                    text += ` 预防建议：命主为${dayGanName}日主，性格`;
+                    if (dayGanName === '甲' || dayGanName === '丙' || dayGanName === '戊' || dayGanName === '庚' || dayGanName === '壬') {
+                        text += '刚强外向，遇事要冷静，三思而后行。';
+                    } else {
+                        text += '柔和内敛，遇事要勇敢，该维权时绝不退缩。';
+                    }
+                    text += '日常多学习法律知识，签订合同仔细阅读，保留好证据。';
+                    
+                    return text;
+                },
+                
+                // 10. 驿马外出分析
+                analyzeTravel: function(shensha, yearZhiIndex, hourZhiIndex) {
+                    let text = `【驿马外出分析】驿马星主奔波、旅行、迁移，代表外出发展的机会。`;
+                    
+                    // 驿马判断（150字）
+                    const isYearMa = (yearZhiIndex === 2 || yearZhiIndex === 8); // 寅申为驿马
+                    const isHourMa = (hourZhiIndex === 2 || hourZhiIndex === 8);
+                    
+                    if (isYearMa || isHourMa || shensha.includes('驿马')) {
+                        text += ' 命带驿马，一生多动，宜外出发展，动中得财。';
+                        if (isYearMa) {
+                            text += '年柱见驿马，早年离家发展，或祖上迁徙而来。命主可能从小就离开家乡求学，或在异乡成长。';
+                        }
+                        if (isHourMa) {
+                            text += '时柱见驿马，晚年仍奔波，或子女在外地发展。命主晚年可能还闲不住，喜欢旅游，或子女在国外工作。';
+                        }
+                        text += ' 驿马星动的人，不适合守在家乡，越往外发展越顺利，财运越好。适合从事外贸、旅游、运输等行业。';
+                    } else {
+                        text += ' 无驿马星，宜稳定发展，守在家乡或固定工作地点。命主性格喜静，不喜欢频繁变动，适合在稳定的环境中发展，如公务员、教师、技术人员等。';
+                    }
+                    
+                    // 迁移方向分析（150字）
+                    if (isYearMa || isHourMa) {
+                        text += ' 外出发展有利方向：';
+                        if (yearZhiIndex === 2 || hourZhiIndex === 2) { // 寅
+                            text += '寅为东北，适合去东北方向或南方（寅午戌合火）发展；';
+                        }
+                        if (yearZhiIndex === 8 || hourZhiIndex === 8) { // 申
+                            text += '申为西南，适合去西南方向或北方（申子辰合水）发展；';
+                        }
+                    }
+                    
+                    // 神煞分析（100字）
+                    if (shensha.includes('天乙贵人')) {
+                        text += ' 外出易遇贵人，在外地发展比家乡更顺利。';
+                    }
+                    if (shensha.includes('桃花')) {
+                        text += ' 外出桃花运旺，可能在外地遇到良缘。';
+                    }
+                    
+                    // 现代意义（100字）
+                    text += ' 现代社会中，驿马也代表网络、交通、信息流动。命主可能经常出差、异地办公，或从事与互联网相关的行业。要善用现代交通工具和通讯手段，把握异地机遇。';
+                    
+                    return text;
+                },
+                
+                // 11. 性格分析
+                analyzePersonality: function(dayGanName, dayGanIndex, wuxingCount, dayZhiWx) {
+                    let text = `【性格分析】日干为${dayGanName}，代表命主的核心性格。`;
+                    
+                    // 十天干性格（200字）
+                    const ganPersonality = [
+                        '甲木为栋梁之木，仁慈善良，有领导力，正直不屈，有上进心。但甲木之人有时过于刚直，不懂变通，容易得罪人。',
+                        '乙木为花草之木，柔韧善变，有艺术天赋，适应力强。但乙木之人有时缺乏主见，容易受环境影响，需要培养决断力。',
+                        '丙火为太阳之火，热情开朗，慷慨大方，有感染力。但丙火之人有时急躁冲动，缺乏耐心，容易半途而废。',
+                        '丁火为灯烛之火，温和细腻，有智慧，善于思考。但丁火之人有时过于敏感，思虑过多，容易陷入情绪。',
+                        '戊土为城墙之土，稳重诚实，讲信用，有担当。但戊土之人有时固执保守，不易接受新事物，需要开放心态。',
+                        '己土为田园之土，包容厚道，有耐心，善于协调。但己土之人有时缺乏进取心，安于现状，需要目标激励。',
+                        '庚金为刀剑之金，果决坚毅，讲义气，有魄力。但庚金之人有时过于刚硬，不善变通，容易与人冲突。',
+                        '辛金为珠宝之金，精致细腻，有审美，追求完美。但辛金之人有时过于挑剔，对人对己要求高，容易焦虑。',
+                        '壬水为江河之水，智慧圆通，适应力强，有谋略。但壬水之人有时善变，不够专一，需要培养定力。',
+                        '癸水为雨露之水，细腻敏感，有直觉，善于洞察。但癸水之人有时多愁善感，缺乏安全感，需要心理建设。'
+                    ];
+                    text += ganPersonality[dayGanIndex];
+                    
+                    // 五行旺衰影响（150字）
+                    if (wuxingCount['木'] > 3) {
+                        text += ' 木气过盛，性格固执，不易听取他人意见，需学会变通。';
+                    } else if (wuxingCount['木'] === 0) {
+                        text += ' 木气不足，缺乏弹性，容易钻牛角尖，需培养灵活性。';
+                    }
+                    
+                    if (wuxingCount['火'] > 3) {
+                        text += ' 火气过盛，性格急躁，易冲动决策，需培养耐心。';
+                    } else if (wuxingCount['火'] === 0) {
+                        text += ' 火气不足，缺乏热情，容易消极，需培养积极心态。';
+                    }
+                    
+                    if (wuxingCount['土'] > 3) {
+                        text += ' 土气过盛，性格保守，不易接受新事物，需开放心态。';
+                    } else if (wuxingCount['土'] === 0) {
+                        text += ' 土气不足，缺乏稳定性，容易浮躁，需培养定力。';
+                    }
+                    
+                    if (wuxingCount['金'] > 3) {
+                        text += ' 金气过盛，性格刚硬，易与人冲突，需柔和处事。';
+                    } else if (wuxingCount['金'] === 0) {
+                        text += ' 金气不足，缺乏决断力，容易犹豫，需培养魄力。';
+                    }
+                    
+                    if (wuxingCount['水'] > 3) {
+                        text += ' 水气过盛，性格善变，不易捉摸，需培养稳定性。';
+                    } else if (wuxingCount['水'] === 0) {
+                        text += ' 水气不足，缺乏智慧深度，需多学习思考。';
+                    }
+                    
+                    // 日支影响（100字）
+                    text += ` 日支为${dayZhiWx}，代表内在性格：`;
+                    if (dayZhiWx === '木') text += '内在仁慈，但有时固执；';
+                    if (dayZhiWx === '火') text += '内在热情，但有时急躁；';
+                    if (dayZhiWx === '土') text += '内在稳重，但有时保守；';
+                    if (dayZhiWx === '金') text += '内在刚毅，但有时尖锐；';
+                    if (dayZhiWx === '水') text += '内在智慧，但有时善变；';
+                    
+                    // 性格建议（100字）
+                    text += ' 性格建议：认识自己的优点和缺点，扬长避短。';
+                    
+                    return text;
+                },
+                
+                // 12. 大运建议
+                analyzeDayunAdvice: function(daYunArray, startAge, startYear, dayGanName) {
+                    let text = `【大运流年建议】您于<strong>${startAge}</strong>岁起运，大运十年一换，运势循环往复。`;
+                    
+                    // 当前大运分析（150字）
+                    let currentDaYun = '未知';
+                    let currentDaYunIndex = 0;
+                    const currentYear = new Date().getFullYear();
+                    
+                    if (daYunArray && daYunArray.length > 0) {
+                        for (let i = 0; i < daYunArray.length; i++) {
+                            const dy = daYunArray[i];
+                            if (currentYear >= dy.getStartYear() && currentYear < dy.getStartYear() + 10) {
+                                currentDaYun = dy.getGanZhi();
+                                currentDaYunIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        if (currentDaYun !== '未知') {
+                            text += ` 当前大运为<strong>${currentDaYun}</strong>，`;
+                            
+                            // 大运吉凶判断（简化）
+                            const daYunGan = currentDaYun[0];
+                            const daYunZhi = currentDaYun[1];
+                            
+                            // 这里简化处理，实际应根据日主五行详细分析
+                            text += '此运宜';
+                            if (currentDaYunIndex % 3 === 0) {
+                                text += '积极进取，开拓事业，把握机遇。';
+                            } else if (currentDaYunIndex % 3 === 1) {
+                                text += '稳中求进，积累实力，不宜冒进。';
+                            } else {
+                                text += '韬光养晦，学习提升，等待时机。';
+                            }
+                        }
+                    }
+                    
+                    // 大运阶段建议（150字）
+                    if (startAge <= 25) {
+                        text += ' 青年时期（起运-25岁）：此阶段为学习和积累期，宜多读书、多尝试，找到人生方向。不要急于求成，打好基础最重要。';
+                    }
+                    if (startAge + 10 <= 35) {
+                        text += ' 青壮年时期（25-35岁）：此阶段为发展期，宜确定事业方向，努力拼搏。可考虑成家立业，稳定下来。';
+                    }
+                    if (startAge + 20 <= 45) {
+                        text += ' 中年时期（35-45岁）：此阶段为事业高峰期，宜抓住机遇，大展宏图。同时要注意身体健康，平衡工作与生活。';
+                    }
+                    if (startAge + 30 <= 55) {
+                        text += ' 中晚年时期（45-55岁）：此阶段为收获期，宜巩固成果，享受生活。可考虑传承经验，培养接班人。';
+                    }
+                    if (startAge + 40 <= 65) {
+                        text += ' 晚年时期（55岁以后）：此阶段为安享期，宜保养身体，含饴弄孙。可发展兴趣爱好，丰富精神生活。';
+                    }
+                    
+                    // 流年建议（100字）
+                    text += ` 流年运势：每年运势不同，${dayGanName}日主在遇到流年天干为甲、丙、戊、庚、壬的年份，多有好事发生；遇到乙、丁、己、辛、癸的年份，需多加注意。`;
+                    
+                    return text;
+                }
+            };
+            
+            // ==================== 加载检测 ====================
+            function waitForLunar(callback) {
+                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                    callback();
+                    return;
+                }
+                
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                        clearInterval(interval);
+                        callback();
+                    } else if (attempts > 50) {
+                        clearInterval(interval);
+                        document.getElementById('errorMsg').style.display = 'block';
+                        document.getElementById('errorMsg').innerHTML = '命理库加载失败，请刷新页面重试。';
+                    }
+                }, 100);
+            }
+            
+            // ==================== 主应用 ====================
             function initApp() {
                 const app = {
                     init() {
                         this.bindEvents();
+                        
                         // 预填今日日期
                         const today = new Date();
                         document.getElementById('year').value = today.getFullYear();
@@ -417,119 +1225,257 @@
                         document.getElementById('day').value = today.getDate();
                         document.getElementById('hour').value = 12;
                         document.getElementById('minute').value = 0;
+                        document.getElementById('birthCity').value = '北京';
+                        
+                        // 自动判断夏令时
+                        this.checkSummerTime();
                     },
+                    
                     bindEvents() {
                         const form = document.getElementById('baziForm');
                         form.addEventListener('submit', (e) => {
                             e.preventDefault();
                             this.calculate();
                         });
-                    },
-                    // 辅助函数
-                    getWuXingFromGanIndex(index) {
-                        const wuxingArray = ['木', '木', '火', '火', '土', '土', '金', '金', '水', '水'];
-                        return wuxingArray[index];
-                    },
-                    getWuXingFromZhiIndex(index) {
-                        const wuxingArray = ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'];
-                        return wuxingArray[index];
-                    },
-                    getKeWuxing(wx) {
-                        const map = {'木':'土', '火':'金', '土':'水', '金':'木', '水':'火'};
-                        return map[wx];
-                    },
-                    getShengWuxing(wx) {
-                        const map = {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'};
-                        return map[wx];
-                    },
-                    getKeWoWuxing(wx) {
-                        const map = {'木':'金', '火':'水', '土':'木', '金':'火', '水':'土'};
-                        return map[wx];
-                    },
-                    getShiShenByIndex(dayIndex, otherIndex) {
-                        const ganRelation = [
-                            ['比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印'],
-                            ['劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀', '正印', '偏印'],
-                            ['食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印', '比肩', '劫财'],
-                            ['伤官', '食神', '正财', '偏财', '正官', '七杀', '正印', '偏印', '劫财', '比肩'],
-                            ['偏财', '正财', '七杀', '正官', '偏印', '正印', '比肩', '劫财', '食神', '伤官'],
-                            ['正财', '偏财', '正官', '七杀', '正印', '偏印', '劫财', '比肩', '伤官', '食神'],
-                            ['七杀', '正官', '偏印', '正印', '比肩', '劫财', '食神', '伤官', '偏财', '正财'],
-                            ['正官', '七杀', '正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财'],
-                            ['偏印', '正印', '比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官'],
-                            ['正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀']
-                        ];
-                        return ganRelation[dayIndex][otherIndex];
+                        
+                        document.getElementById('year').addEventListener('change', () => this.checkSummerTime());
+                        document.getElementById('month').addEventListener('change', () => this.checkSummerTime());
                     },
                     
-                    // 核心计算
+                    checkSummerTime() {
+                        const year = parseInt(document.getElementById('year').value);
+                        const month = parseInt(document.getElementById('month').value);
+                        const city = document.getElementById('birthCity').value || '北京';
+                        
+                        const shouldUse = TrueSolarTime.shouldUseSummerTime(year, month, city);
+                        document.getElementById('summerTime').value = shouldUse ? 'true' : 'false';
+                        
+                        const infoMsg = document.getElementById('summerTimeInfo');
+                        if (shouldUse) {
+                            infoMsg.innerHTML = '⚠️ 您输入的年份处于中国夏令时期间（1986-1992），系统已自动启用夏令时校正。';
+                            infoMsg.style.display = 'block';
+                        } else {
+                            infoMsg.style.display = 'none';
+                        }
+                    },
+                    
+                    getWuXingFromGanIndex(index) {
+                        return BaziAnalyzer.getWuxingFromGan(index);
+                    },
+                    
+                    getWuXingFromZhiIndex(index) {
+                        return BaziAnalyzer.getWuxingFromZhi(index);
+                    },
+                    
+                    getShiShenByIndex(dayIndex, otherIndex) {
+                        return BaziAnalyzer.getShiShen(dayIndex, otherIndex);
+                    },
+                    
                     calculate() {
                         const year = parseInt(document.getElementById('year').value);
                         const month = parseInt(document.getElementById('month').value);
                         const day = parseInt(document.getElementById('day').value);
-                        const hour = parseInt(document.getElementById('hour').value) || 12;
-                        const gender = document.getElementById('gender').value;
-
-                        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+                        const hour = parseInt(document.getElementById('hour').value);
+                        const minute = parseInt(document.getElementById('minute').value);
+                        const city = document.getElementById('birthCity').value;
+                        const useSummerTime = document.getElementById('summerTime').value === 'true';
+                        
+                        if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hour) || isNaN(minute)) {
                             this.showError('请完整填写出生日期');
                             return;
                         }
-
+                        
+                        if (!city) {
+                            this.showError('请输入出生城市（用于真太阳时校正）');
+                            return;
+                        }
+                        
                         try {
-                            // 使用本地引擎计算八字
-                            const yearGanzhi = BaziEngine.getYearGanzhi(year);
-                            const dayGanzhi = BaziEngine.getDayGanzhi(year, month, day);
-                            const monthGanzhi = BaziEngine.getMonthGanzhi(year, month, dayGanzhi.ganIndex);
-                            const hourGanzhi = BaziEngine.getHourGanzhi(hour, dayGanzhi.ganIndex);
+                            // 计算真太阳时
+                            const trueTime = TrueSolarTime.calculate(year, month, day, hour, minute, city, useSummerTime);
+                            this.showTimeCorrection(trueTime);
                             
-                            // 生成大运
-                            const daYunArray = BaziEngine.generateDayun(year, gender, month, dayGanzhi.ganIndex);
+                            // 使用校正后的时间排盘
+                            const Solar = Lunar.Solar;
+                            const solar = Solar.fromYmdHms(trueTime.year, trueTime.month, trueTime.day, trueTime.hour, trueTime.minute, 0);
+                            const lunar = solar.getLunar();
+                            const eightChar = lunar.getEightChar();
                             
-                            // 神煞（简化版）
+                            const yearGanZhiStr = eightChar.getYear();
+                            const monthGanZhiStr = eightChar.getMonth();
+                            const dayGanZhiStr = eightChar.getDay();
+                            const hourGanZhiStr = eightChar.getTime();
+                            
+                            const yearGan = lunar.getYearGan();
+                            const yearZhi = lunar.getYearZhi();
+                            const monthGan = lunar.getMonthGan();
+                            const monthZhi = lunar.getMonthZhi();
+                            const dayGan = lunar.getDayGan();
+                            const dayZhi = lunar.getDayZhi();
+                            const hourGan = lunar.getTimeGan();
+                            const hourZhi = lunar.getTimeZhi();
+                            
+                            const dayGanIndex = dayGan.getIndex();
+                            
+                            const daYunArray = eightChar.getDaYun(gender === 'male' ? 1 : 0);
+                            const startAge = eightChar.getStartAge();
+                            const startYear = eightChar.getStartYear();
+                            
+                            // 神煞（简化，可扩展）
                             const allShensha = [];
                             if (Math.random() > 0.5) allShensha.push('天乙贵人');
                             if (Math.random() > 0.6) allShensha.push('文昌贵人');
-                            if (dayGanzhi.ganIndex === 2 || dayGanzhi.ganIndex === 3) allShensha.push('桃花');
-                            if (yearGanzhi.zhiIndex === 2 || yearGanzhi.zhiIndex === 8) allShensha.push('驿马');
-
-                            // 渲染
+                            if (dayGanIndex === 2 || dayGanIndex === 3) allShensha.push('桃花');
+                            if (yearZhi.getIndex() === 2 || yearZhi.getIndex() === 8) allShensha.push('驿马');
+                            
+                            // 渲染八字卡片
                             this.renderPillars({
-                                yearGanZhiStr: yearGanzhi.ganzhi,
-                                monthGanZhiStr: monthGanzhi.ganzhi,
-                                dayGanZhiStr: dayGanzhi.ganzhi,
-                                hourGanZhiStr: hourGanzhi.ganzhi,
-                                yearGan: { getName: () => yearGanzhi.gan, getIndex: () => yearGanzhi.ganIndex },
-                                yearZhi: { getName: () => yearGanzhi.zhi, getIndex: () => yearGanzhi.zhiIndex },
-                                monthGan: { getName: () => monthGanzhi.gan, getIndex: () => monthGanzhi.ganIndex },
-                                monthZhi: { getName: () => monthGanzhi.zhi, getIndex: () => monthGanzhi.zhiIndex },
-                                dayGan: { getName: () => dayGanzhi.gan, getIndex: () => dayGanzhi.ganIndex },
-                                dayZhi: { getName: () => dayGanzhi.zhi, getIndex: () => dayGanzhi.zhiIndex },
-                                hourGan: { getName: () => hourGanzhi.gan, getIndex: () => hourGanzhi.ganIndex },
-                                hourZhi: { getName: () => hourGanzhi.zhi, getIndex: () => hourGanzhi.zhiIndex },
-                                dayGanIndex: dayGanzhi.ganIndex
+                                yearGanZhiStr, monthGanZhiStr, dayGanZhiStr, hourGanZhiStr,
+                                yearGan, monthGan, dayGan, hourGan,
+                                yearZhi, monthZhi, dayZhi, hourZhi,
+                                dayGanIndex
                             });
-
-                            this.renderAnalysis({
-                                dayGan: { getName: () => dayGanzhi.gan, getIndex: () => dayGanzhi.ganIndex },
-                                dayZhi: { getName: () => dayGanzhi.zhi, getIndex: () => dayGanzhi.zhiIndex },
-                                yearGan: { getName: () => yearGanzhi.gan, getIndex: () => yearGanzhi.ganIndex },
-                                yearZhi: { getName: () => yearGanzhi.zhi, getIndex: () => yearGanzhi.zhiIndex },
-                                monthGan: { getName: () => monthGanzhi.gan, getIndex: () => monthGanzhi.ganIndex },
-                                monthZhi: { getName: () => monthGanzhi.zhi, getIndex: () => monthGanzhi.zhiIndex },
-                                hourGan: { getName: () => hourGanzhi.gan, getIndex: () => hourGanzhi.ganIndex },
-                                hourZhi: { getName: () => hourGanzhi.zhi, getIndex: () => hourGanzhi.zhiIndex },
-                                dayGanIndex: dayGanzhi.ganIndex,
-                                daYunArray: daYunArray,
-                                startAge: 8,
-                                startYear: year + 8,
-                                allShensha: allShensha,
-                                gender: gender
+                            
+                            // 计算五行统计
+                            const wuxingCount = { '木':0, '火':0, '土':0, '金':0, '水':0 };
+                            [yearGan, monthGan, dayGan, hourGan].forEach(g => {
+                                const wx = this.getWuXingFromGanIndex(g.getIndex());
+                                wuxingCount[wx]++;
                             });
-
+                            [yearZhi, monthZhi, dayZhi, hourZhi].forEach(z => {
+                                const wx = this.getWuXingFromZhiIndex(z.getIndex());
+                                wuxingCount[wx]++;
+                            });
+                            
+                            // 渲染所有分析（每个板块200字以上）
+                            document.getElementById('summaryText').innerHTML = BaziAnalyzer.analyzeSummary(
+                                dayGan.getName(), 
+                                this.getWuXingFromGanIndex(dayGanIndex), 
+                                wuxingCount, 
+                                allShensha, 
+                                document.getElementById('gender').value,
+                                dayGanIndex
+                            );
+                            
+                            document.getElementById('wealthText').innerHTML = BaziAnalyzer.analyzeWealth(
+                                this.getWuXingFromGanIndex(dayGanIndex),
+                                wuxingCount,
+                                allShensha,
+                                dayGanIndex,
+                                monthGan,
+                                yearGan,
+                                hourGan
+                            );
+                            
+                            document.getElementById('careerText').innerHTML = BaziAnalyzer.analyzeCareer(
+                                this.getWuXingFromGanIndex(dayGanIndex),
+                                wuxingCount,
+                                dayZhi,
+                                monthZhi,
+                                document.getElementById('gender').value,
+                                dayGanIndex,
+                                monthGan,
+                                yearGan
+                            );
+                            
+                            document.getElementById('marriageText').innerHTML = BaziAnalyzer.analyzeMarriage(
+                                dayGan.getName(),
+                                dayZhi,
+                                allShensha,
+                                document.getElementById('gender').value,
+                                dayZhi.getIndex(),
+                                dayGanIndex
+                            );
+                            
+                            document.getElementById('childrenText').innerHTML = BaziAnalyzer.analyzeChildren(
+                                dayGanIndex,
+                                monthGan,
+                                hourGan,
+                                dayGan.getName()
+                            );
+                            
+                            document.getElementById('healthText').innerHTML = BaziAnalyzer.analyzeHealth(
+                                this.getWuXingFromGanIndex(dayGanIndex),
+                                wuxingCount,
+                                allShensha,
+                                dayGan.getName()
+                            );
+                            
+                            document.getElementById('parentsText').innerHTML = BaziAnalyzer.analyzeParents(
+                                yearGan,
+                                monthGan,
+                                dayGanIndex,
+                                yearZhi,
+                                monthZhi
+                            );
+                            
+                            document.getElementById('houseText').innerHTML = BaziAnalyzer.analyzeHouse(
+                                allShensha,
+                                this.getWuXingFromZhiIndex(dayZhi.getIndex()),
+                                wuxingCount
+                            );
+                            
+                            document.getElementById('legalText').innerHTML = BaziAnalyzer.analyzeLegal(
+                                allShensha,
+                                wuxingCount[BaziAnalyzer.beikeMap[this.getWuXingFromGanIndex(dayGanIndex)]] || 0,
+                                dayGan.getName()
+                            );
+                            
+                            document.getElementById('travelText').innerHTML = BaziAnalyzer.analyzeTravel(
+                                allShensha,
+                                yearZhi.getIndex(),
+                                hourZhi.getIndex()
+                            );
+                            
+                            document.getElementById('personalityText').innerHTML = BaziAnalyzer.analyzePersonality(
+                                dayGan.getName(),
+                                dayGanIndex,
+                                wuxingCount,
+                                this.getWuXingFromZhiIndex(dayZhi.getIndex())
+                            );
+                            
+                            document.getElementById('dayunAdvice').innerHTML = BaziAnalyzer.analyzeDayunAdvice(
+                                daYunArray,
+                                startAge,
+                                startYear,
+                                dayGan.getName()
+                            );
+                            
+                            // 渲染五行统计
+                            let wuxingHtml = '';
+                            for (let wx in wuxingCount) {
+                                const cnt = wuxingCount[wx];
+                                wuxingHtml += `<div style="display:inline-block; margin-right:15px;">${wx} ${cnt} <progress value="${cnt}" max="6"></progress></div>`;
+                            }
+                            document.getElementById('wuxingStats').innerHTML = wuxingHtml;
+                            
+                            // 渲染神煞
+                            document.getElementById('shenshaList').innerHTML = allShensha.map(s => `<span class="shensha-tag">${s}</span>`).join('');
+                            
+                            // 渲染大运
+                            let dayunHtml = '<table class="dayun-table"><tr><th>序号</th><th>大运</th><th>起始年龄</th><th>起始年份</th></tr>';
+                            if (daYunArray && daYunArray.length) {
+                                daYunArray.forEach((dy, idx) => {
+                                    dayunHtml += `<tr><td>${idx+1}</td><td>${dy.getGanZhi()}</td><td>${dy.getStartAge()}</td><td>${dy.getStartYear()}</td></tr>`;
+                                });
+                            }
+                            dayunHtml += '</table>';
+                            document.getElementById('dayunTable').innerHTML = dayunHtml;
+                            
+                            // 渲染流年
+                            const currentYear = new Date().getFullYear();
+                            let liunianHtml = '';
+                            for (let i = 0; i < 10; i++) {
+                                const year = currentYear + i;
+                                liunianHtml += `<span class="liunian-item">${year} 流年</span>`;
+                            }
+                            document.getElementById('liunianList').innerHTML = liunianHtml;
+                            
                             document.getElementById('errorMsg').style.display = 'none';
+                            
                         } catch (err) {
-                            console.error(err);
-                            this.showError('排盘计算失败：' + err.message);
+                            console.error('计算错误:', err);
+                            this.showError(`排盘失败：${err.message}`);
                         }
                     },
                     
@@ -538,237 +1484,38 @@
                                 yearGan, monthGan, dayGan, hourGan,
                                 yearZhi, monthZhi, dayZhi, hourZhi,
                                 dayGanIndex } = data;
-
+                        
                         document.getElementById('yearGanZhi').innerText = yearGanZhiStr;
                         document.getElementById('yearGan').innerText = yearGan.getName();
                         document.getElementById('yearZhi').innerText = yearZhi.getName();
                         document.getElementById('yearShishen').innerText = this.getShiShenByIndex(dayGanIndex, yearGan.getIndex());
-
+                        
                         document.getElementById('monthGanZhi').innerText = monthGanZhiStr;
                         document.getElementById('monthGan').innerText = monthGan.getName();
                         document.getElementById('monthZhi').innerText = monthZhi.getName();
                         document.getElementById('monthShishen').innerText = this.getShiShenByIndex(dayGanIndex, monthGan.getIndex());
-
+                        
                         document.getElementById('dayGanZhi').innerText = dayGanZhiStr;
                         document.getElementById('dayGan').innerText = dayGan.getName();
                         document.getElementById('dayZhi').innerText = dayZhi.getName();
                         document.getElementById('dayShishen').innerText = '日元';
-
+                        
                         document.getElementById('hourGanZhi').innerText = hourGanZhiStr;
                         document.getElementById('hourGan').innerText = hourGan.getName();
                         document.getElementById('hourZhi').innerText = hourZhi.getName();
                         document.getElementById('hourShishen').innerText = this.getShiShenByIndex(dayGanIndex, hourGan.getIndex());
                     },
                     
-                    renderAnalysis(data) {
-                        const {
-                            dayGan, dayZhi, yearGan, monthGan, hourGan,
-                            yearZhi, monthZhi, hourZhi,
-                            dayGanIndex, daYunArray, startAge, startYear, allShensha, gender
-                        } = data;
-
-                        const dayGanName = dayGan.getName();
-                        const dayWuXing = this.getWuXingFromGanIndex(dayGanIndex);
-
-                        // 五行统计
-                        const wuxingCount = { '木':0, '火':0, '土':0, '金':0, '水':0 };
-                        [yearGan, monthGan, dayGan, hourGan].forEach(g => {
-                            const wx = this.getWuXingFromGanIndex(g.getIndex());
-                            wuxingCount[wx]++;
-                        });
-                        [yearZhi, monthZhi, dayZhi, hourZhi].forEach(z => {
-                            const wx = this.getWuXingFromZhiIndex(z.getIndex());
-                            wuxingCount[wx]++;
-                        });
-
-                        // 五行显示
-                        let wuxingHtml = '';
-                        for (let wx in wuxingCount) {
-                            const cnt = wuxingCount[wx];
-                            wuxingHtml += `<div style="display:inline-block; margin-right:15px;">${wx} ${cnt} <progress value="${cnt}" max="6"></progress></div>`;
-                        }
-                        document.getElementById('wuxingStats').innerHTML = wuxingHtml;
-
-                        // 神煞
-                        document.getElementById('shenshaList').innerHTML = allShensha.map(s => `<span class="shensha-tag">${s}</span>`).join('');
-
-                        // 大运
-                        let dayunHtml = '<table class="dayun-table"><tr><th>序号</th><th>大运</th><th>起始年龄</th><th>起始年份</th></tr>';
-                        if (daYunArray && daYunArray.length) {
-                            daYunArray.forEach((dy, idx) => {
-                                dayunHtml += `<tr><td>${idx+1}</td><td>${dy.getGanZhi()}</td><td>${dy.getStartAge()}</td><td>${dy.getStartYear()}</td></tr>`;
-                            });
-                        }
-                        dayunHtml += '</table>';
-                        document.getElementById('dayunTable').innerHTML = dayunHtml;
-
-                        // 流年
-                        const currentYear = new Date().getFullYear();
-                        let liunianHtml = '';
-                        for (let i = 0; i < 10; i++) {
-                            const year = currentYear + i;
-                            liunianHtml += `<span class="liunian-item">${year} 流年</span>`;
-                        }
-                        document.getElementById('liunianList').innerHTML = liunianHtml;
-
-                        // 分析文本
-                        document.getElementById('summaryText').innerHTML = this.analyzeSummary(dayGanName, dayWuXing, wuxingCount, allShensha, gender);
-                        document.getElementById('wealthText').innerHTML = this.analyzeWealth(dayWuXing, wuxingCount, allShensha, dayGanIndex, monthGan, yearGan);
-                        document.getElementById('careerText').innerHTML = this.analyzeCareer(dayWuXing, wuxingCount, dayZhi, monthZhi, gender, dayGanIndex, monthGan);
-                        document.getElementById('marriageText').innerHTML = this.analyzeMarriage(dayGanName, dayZhi, allShensha, gender);
-                        document.getElementById('childrenText').innerHTML = this.analyzeChildren(dayGanIndex, monthGan, hourGan);
-                        document.getElementById('healthText').innerHTML = this.analyzeHealth(dayWuXing, wuxingCount, allShensha);
-                        document.getElementById('parentsText').innerHTML = this.analyzeParents(yearGan, monthGan, dayGanIndex);
-                        document.getElementById('houseText').innerHTML = this.analyzeHouse(allShensha);
-                        document.getElementById('legalText').innerHTML = this.analyzeLegal(allShensha);
-                        document.getElementById('travelText').innerHTML = this.analyzeTravel(allShensha);
-                        document.getElementById('personalityText').innerHTML = this.analyzePersonality(dayGanName, dayGanIndex, wuxingCount);
-                        document.getElementById('dayunAdvice').innerHTML = this.analyzeDayunAdvice(daYunArray, startAge, startYear);
-                    },
-                    
-                    // 分析函数（保持不变）
-                    analyzeSummary(dayGanName, dayWuXing, wuxingCount, shensha, gender) {
-                        let text = `日主为<strong>${dayGanName}</strong>，五行属<strong>${dayWuXing}</strong>。`;
-                        text += `八字中${dayWuXing}元素出现${wuxingCount[dayWuXing] || 0}次，`;
-                        if (wuxingCount[dayWuXing] >= 3) text += '同类较多，自身强旺。';
-                        else if (wuxingCount[dayWuXing] <= 1) text += '同类较少，自身偏弱。';
-                        else text += '中和。';
-
-                        if (shensha.includes('天乙贵人')) text += ' 命带天乙贵人，一生逢凶化吉。';
-                        if (shensha.includes('文昌贵人')) text += ' 文昌入命，学业聪慧。';
-                        if (shensha.includes('桃花')) text += ' 桃花星显，异性缘佳。';
-                        if (shensha.includes('驿马')) text += ' 驿马星动，宜动中求财。';
-                        return text;
-                    },
-                    
-                    analyzeWealth(dayWuXing, wuxingCount, shensha, dayGanIndex, monthGan, yearGan) {
-                        let text = '';
-                        const wealthWx = this.getKeWuxing(dayWuXing);
-                        const wealthCount = wuxingCount[wealthWx] || 0;
-                        text += `您的财星五行属<strong>${wealthWx}</strong>，八字中出现${wealthCount}次。`;
-                        if (wealthCount >= 3) text += '财星旺盛，求财容易，但需防财多身弱。';
-                        else if (wealthCount === 2) text += '财星适中，财运平稳，可通过努力得财。';
-                        else if (wealthCount === 1) text += '财星有根，财运尚可，但需抓住机遇。';
-                        else text += '财星不显，宜合伙或专精技术求财。';
-
-                        const monthShishen = this.getShiShenByIndex(dayGanIndex, monthGan.getIndex());
-                        if (monthShishen.includes('财')) text += ` 月干为${monthShishen}，青年时期财运较明显。`;
-                        const yearShishen = this.getShiShenByIndex(dayGanIndex, yearGan.getIndex());
-                        if (yearShishen.includes('财') && yearShishen !== monthShishen) text += ` 年干也为${yearShishen}，可得祖上或长辈之财。`;
-
-                        return text;
-                    },
-                    
-                    analyzeCareer(dayWuXing, wuxingCount, dayZhi, monthZhi, gender, dayGanIndex, monthGan) {
-                        let text = `官杀代表事业与压力。`;
-                        const guanShaWx = this.getKeWoWuxing(dayWuXing);
-                        const guanShaCount = wuxingCount[guanShaWx] || 0;
-                        text += `官杀星五行为<strong>${guanShaWx}</strong>，八字中出现${guanShaCount}次。`;
-                        if (guanShaCount >= 3) text += '官杀过旺，压力大，但管理能力强。';
-                        else if (guanShaCount === 2) text += '官杀适中，事业心强，能有成就。';
-                        else if (guanShaCount === 1) text += '官杀有根，事业平稳。';
-                        else text += '官杀不显，不喜被管，适合自由职业。';
-
-                        const yinWx = this.getShengWuxing(dayWuXing);
-                        const yinCount = wuxingCount[yinWx] || 0;
-                        if (yinCount > 2) text += ` 印星(${yinWx})旺盛，多得贵人扶持。`;
-
-                        return text;
-                    },
-                    
-                    analyzeMarriage(dayGanName, dayZhi, shensha, gender) {
-                        let text = `日支(配偶宫)为<strong>${dayZhi.getName()}</strong>，`;
-                        if (dayZhi.getIndex() % 6 === 0) text += '夫妻宫逢冲，需多沟通。';
-                        else text += '夫妻宫稳定，婚姻较和美。';
-                        return text;
-                    },
-                    
-                    analyzeChildren(dayGanIndex, monthGan, hourGan) {
-                        let text = '子女星为食神伤官。';
-                        const foodShen = ['食神', '伤官'];
-                        const monthShishen = this.getShiShenByIndex(dayGanIndex, monthGan.getIndex());
-                        const hourShishen = this.getShiShenByIndex(dayGanIndex, hourGan.getIndex());
-                        if (foodShen.includes(monthShishen) || foodShen.includes(hourShishen)) {
-                            text += '月柱或时柱见食伤，子息缘佳。';
-                        } else {
-                            text += '八字中食伤星不显，子息缘较浅，需多做善事培福。';
-                        }
-                        return text;
-                    },
-                    
-                    analyzeHealth(dayWuXing, wuxingCount, shensha) {
-                        let text = '';
-                        const excess = [];
-                        for (let wx in wuxingCount) {
-                            if (wuxingCount[wx] > 3) excess.push(wx);
-                        }
-                        if (excess.length === 0) text = '五行均衡，身体底子好。';
-                        else {
-                            text = '您五行';
-                            excess.forEach(wx => {
-                                if (wx === '木') text += '木旺，需防肝胆、筋骨问题；';
-                                if (wx === '火') text += '火旺，需防心脑血管、眼疾；';
-                                if (wx === '土') text += '土旺，需防脾胃、皮肤问题；';
-                                if (wx === '金') text += '金旺，需防呼吸系统、大肠问题；';
-                                if (wx === '水') text += '水旺，需防肾脏、泌尿系统问题；';
-                            });
-                        }
-                        return text;
-                    },
-                    
-                    analyzeParents(yearGan, monthGan, dayGanIndex) {
-                        const yearShishen = this.getShiShenByIndex(dayGanIndex, yearGan.getIndex());
-                        const monthShishen = this.getShiShenByIndex(dayGanIndex, monthGan.getIndex());
-                        let text = `年柱为祖上，月柱为父母。`;
-                        if (yearShishen.includes('印') || monthShishen.includes('印')) {
-                            text += '年月印星有气，父母对您助力较大，能得庇护。';
-                        } else if (yearShishen.includes('财') || monthShishen.includes('财')) {
-                            text += '年月财星旺，家庭经济条件较好。';
-                        } else {
-                            text += '年月星气平平，与父母缘分普通，需自己奋斗。';
-                        }
-                        return text;
-                    },
-                    
-                    analyzeHouse(shensha) {
-                        let text = '田宅宫看库与印。';
-                        if (shensha.includes('华盖')) text += '华盖入命，喜清静，适合独居或乡村置业。';
-                        else text += '房产运平顺，可通过努力置产。';
-                        return text;
-                    },
-                    
-                    analyzeLegal(shensha) {
-                        let text = '官非与刑冲破害相关。';
-                        if (shensha.includes('官符') || shensha.includes('五鬼')) text += '有官非风险，行事需谨慎。';
-                        else text += '官非概率低，守法经营即可。';
-                        return text;
-                    },
-                    
-                    analyzeTravel(shensha) {
-                        let text = '驿马星主奔波。';
-                        if (shensha.includes('驿马')) text += '命带驿马，常外出发展，动中得财。';
-                        else text += '无驿马，宜稳定发展。';
-                        return text;
-                    },
-                    
-                    analyzePersonality(dayGanName, dayGanIndex, wuxingCount) {
-                        let text = `日干为${dayGanName}，`;
-                        if (dayGanIndex < 2) text += '仁慈善良，有领导力。';
-                        else if (dayGanIndex < 4) text += '热情开朗，但易冲动。';
-                        else if (dayGanIndex < 6) text += '稳重诚实，讲信用。';
-                        else if (dayGanIndex < 8) text += '果决坚毅，讲义气。';
-                        else text += '智慧圆通，适应力强。';
-                        if (wuxingCount['木'] > 3) text += ' 木气过盛，易固执。';
-                        if (wuxingCount['火'] > 3) text += ' 火气过盛，易急躁。';
-                        return text;
-                    },
-                    
-                    analyzeDayunAdvice(daYunArray, startAge, startYear) {
-                        let currentDaYun = '未知';
-                        if (daYunArray && daYunArray.length > 0) {
-                            currentDaYun = daYunArray[0].getGanZhi();
-                        }
-                        return `您于<strong>${startAge}</strong>岁起运，当前大运为<strong>${currentDaYun}</strong>，此运宜耐心积累，顺势而为。`;
+                    showTimeCorrection(trueTime) {
+                        const infoDiv = document.getElementById('timeCorrection');
+                        infoDiv.style.display = 'block';
+                        infoDiv.innerHTML = `
+                            <strong>📍 真太阳时校正结果</strong><br>
+                            <span>出生城市：${trueTime.city}（东经${trueTime.longitude}°）</span><br>
+                            <span>北京时间：${trueTime.originalHour.toString().padStart(2, '0')}:${trueTime.originalMinute.toString().padStart(2, '0')}</span><br>
+                            <span>经度时差：${trueTime.diffFormatted}</span><br>
+                            <span style="color: #b53b3b; font-weight: 700;">真太阳时：${trueTime.formatted}</span>
+                        `;
                     },
                     
                     showError(msg) {
@@ -777,30 +1524,25 @@
                         err.innerText = msg;
                     }
                 };
-
+                
                 app.init();
             }
-
-            // 启动应用
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initApp);
-            } else {
-                initApp();
-            }
+            
+            waitForLunar(initApp);
         })();
     </script>
 </head>
 <body>
     <div class="hero">
         <h1>🧿 紫微·八字全息排盘</h1>
-        <p>专业命理引擎 · 万字长文分析 · 十星神煞 · 大运流年 · 子女财运事业健康父母田宅官非驿马</p>
+        <p>真太阳时校正 · 专业命理引擎 · 万字长文分析</p>
     </div>
     <div class="container">
         <div class="card">
             <form id="baziForm">
                 <div class="input-grid">
                     <div class="input-item">
-                        <label>📅 出生年</label>
+                        <label>📅 出生年（阳历）</label>
                         <input type="number" id="year" min="1900" max="2100" value="1990" required>
                     </div>
                     <div class="input-item">
@@ -813,11 +1555,27 @@
                     </div>
                     <div class="input-item">
                         <label>⏰ 时 (0-23)</label>
-                        <input type="number" id="hour" min="0" max="23" value="12">
+                        <input type="number" id="hour" min="0" max="23" value="12" required>
                     </div>
                     <div class="input-item">
                         <label>⏱️ 分</label>
-                        <input type="number" id="minute" min="0" max="59" value="0">
+                        <input type="number" id="minute" min="0" max="59" value="0" required>
+                    </div>
+                    <div class="input-item" style="flex: 2 1 300px;">
+                        <label>📍 出生城市</label>
+                        <input type="text" id="birthCity" list="cityList" placeholder="用于真太阳时校正" value="北京" required>
+                        <datalist id="cityList">
+                            <option value="北京">北京</option>
+                            <option value="上海">上海</option>
+                            <option value="广州">广州</option>
+                            <option value="深圳">深圳</option>
+                            <option value="成都">成都</option>
+                            <option value="重庆">重庆</option>
+                            <option value="武汉">武汉</option>
+                            <option value="西安">西安</option>
+                            <option value="乌鲁木齐">乌鲁木齐</option>
+                            <option value="拉萨">拉萨</option>
+                        </datalist>
                     </div>
                     <div class="input-item">
                         <label>⚥ 性别</label>
@@ -826,11 +1584,22 @@
                             <option value="female">女</option>
                         </select>
                     </div>
+                    <div class="input-item" style="display: none;">
+                        <select id="summerTime">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
                 </div>
+                
+                <div id="summerTimeInfo" class="info-message" style="display: none;"></div>
+                
                 <div style="text-align: center; margin-top: 1.5rem;">
-                    <button type="submit" class="btn-primary">🔮 排盘批算</button>
+                    <button type="submit" class="btn-primary">🔮 排盘批算（使用真太阳时）</button>
                 </div>
             </form>
+            
+            <div id="timeCorrection" class="time-correction" style="display: none;"></div>
             <div id="errorMsg" class="error-message" style="display:none;"></div>
         </div>
 
@@ -880,7 +1649,7 @@
             <div class="analysis-block" style="margin-top:1rem;" id="dayunAdvice"></div>
         </div>
 
-        <!-- 10+ 详细分析板块 -->
+        <!-- 12个详细分析板块，每个200字以上 -->
         <div class="grid-2col">
             <div class="analysis-block">
                 <h3>🧬 总论</h3>
@@ -929,7 +1698,7 @@
         </div>
     </div>
     <footer>
-        ⚡ 全息命理 · 超越传统 · 仅供娱乐参考
+        ⚡ 全息命理 · 使用阳历（公历） · 真太阳时校正 · 内部数据库 · 仅供娱乐参考
     </footer>
 </body>
 </html>
