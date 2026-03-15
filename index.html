@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
     <title>紫微斗数·八字全息排盘｜专业真太阳时校正系统</title>
     <style>
-        /* 样式保持不变，省略以节省空间，您保留原有的所有样式 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -265,89 +264,56 @@
         }
     </style>
     
-    <!-- 多CDN备用加载方案（修复版本号） -->
-<script>
-(function() {
-    // 定义备用CDN列表 - 使用正确的版本号 1.7.4
-    var cdnList = [
-        "https://unpkg.com/lunar-javascript@1.7.4/dist/lunar.min.js",
-        "https://cdn.bootcdn.net/ajax/libs/lunar-javascript/1.7.4/lunar.min.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/1.7.4/lunar.min.js",
-        "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.4/dist/lunar.min.js"
-    ];
-    
-    // 备用版本列表（如果1.7.4不行，尝试其他版本）
-    var fallbackVersions = [
-        "https://unpkg.com/lunar-javascript@1.7.3/dist/lunar.min.js",
-        "https://unpkg.com/lunar-javascript@1.7.2/dist/lunar.min.js",
-        "https://unpkg.com/lunar-javascript@1.7.1/dist/lunar.min.js"
-    ];
-    
-    var loaded = false;
-    
-    function loadScript(src) {
-        return new Promise(function(resolve, reject) {
-            var script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-    
-    async function tryLoadCDNs() {
-        // 先尝试1.7.4的多个CDN
-        for (var i = 0; i < cdnList.length; i++) {
-            try {
-                console.log('尝试加载:', cdnList[i]);
-                await loadScript(cdnList[i]);
-                // 等待一小段时间确保Lunar对象可用
-                await new Promise(r => setTimeout(r, 200));
-                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
-                    console.log('✅ Lunar库加载成功:', cdnList[i]);
-                    loaded = true;
-                    document.dispatchEvent(new Event('LunarReady'));
-                    return;
+    <!-- 多CDN备用加载方案（使用稳定版本） -->
+    <script>
+    (function() {
+        // 使用稳定的CDN版本
+        var cdnList = [
+            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.4/dist/lunar.min.js",
+            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.3/dist/lunar.min.js",
+            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.2/dist/lunar.min.js",
+            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.1/dist/lunar.min.js",
+            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.0/dist/lunar.min.js"
+        ];
+        
+        async function tryLoadCDNs() {
+            for (var i = 0; i < cdnList.length; i++) {
+                try {
+                    console.log('尝试加载:', cdnList[i]);
+                    var script = document.createElement('script');
+                    script.src = cdnList[i];
+                    
+                    await new Promise(function(resolve, reject) {
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    
+                    // 等待初始化
+                    await new Promise(r => setTimeout(r, 200));
+                    
+                    if (typeof Lunar !== 'undefined' && Lunar.Solar) {
+                        console.log('✅ Lunar库加载成功:', cdnList[i]);
+                        document.dispatchEvent(new Event('LunarReady'));
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('❌ 加载失败:', cdnList[i]);
                 }
-            } catch (e) {
-                console.warn('⚠️ CDN加载失败:', cdnList[i], e);
+            }
+            
+            // 所有都失败
+            console.error('所有CDN均加载失败');
+            var errorMsg = document.getElementById('errorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = '无法加载命理库，请刷新页面重试';
             }
         }
         
-        // 如果1.7.4都不行，尝试其他版本
-        console.log('尝试加载其他版本...');
-        for (var j = 0; j < fallbackVersions.length; j++) {
-            try {
-                console.log('尝试加载备用版本:', fallbackVersions[j]);
-                await loadScript(fallbackVersions[j]);
-                await new Promise(r => setTimeout(r, 200));
-                if (typeof Lunar !== 'undefined' && Lunar.Solar) {
-                    console.log('✅ Lunar库加载成功（备用版本）:', fallbackVersions[j]);
-                    loaded = true;
-                    document.dispatchEvent(new Event('LunarReady'));
-                    return;
-                }
-            } catch (e) {
-                console.warn('⚠️ 备用版本加载失败:', fallbackVersions[j], e);
-            }
-        }
-        
-        // 所有CDN都失败了，显示错误信息
-        console.error('❌ 所有CDN均加载失败');
-        var errorMsg = document.getElementById('errorMsg');
-        if (errorMsg) {
-            errorMsg.style.display = 'block';
-            errorMsg.innerHTML = '网络连接不稳定，无法加载命理计算库。请尝试：<br>' +
-                '1. 刷新页面<br>' +
-                '2. 切换网络环境（如使用移动数据）<br>' +
-                '3. 或手动访问以下链接确认CDN可用性：<br>' +
-                'https://unpkg.com/lunar-javascript@1.7.4/dist/lunar.min.js';
-        }
-    }
-    
-    tryLoadCDNs();
-})();
-</script>
+        tryLoadCDNs();
+    })();
+    </script>
     
     <script>
         (function() {
@@ -431,38 +397,31 @@
                 
                 // 计算真太阳时
                 calculate: function(year, month, day, hour, minute, city, useSummerTime = false) {
-                    // 验证输入
                     if (!city) {
                         throw new Error('请输入出生城市');
                     }
                     
-                    // 获取城市经度
                     const longitude = this.getLongitude(city);
                     if (!longitude) {
-                        throw new Error(`未找到城市"${city}"的经度信息，请选择附近主要城市`);
+                        throw new Error(`未找到城市"${city}"的经度信息`);
                     }
                     
-                    // 处理夏令时
                     let adjustedHour = hour;
                     if (useSummerTime) {
                         adjustedHour -= 1;
                     }
                     
-                    // 计算时差
                     const baseLongitude = 120.0;
                     const diffMinutes = (longitude - baseLongitude) * 4;
                     
-                    // 计算真太阳时
                     let totalMinutes = adjustedHour * 60 + minute + diffMinutes;
                     
-                    // 处理跨日
                     let newDay = day;
                     let newMonth = month;
                     let newYear = year;
                     let newHour = Math.floor(totalMinutes / 60);
                     let newMinute = Math.round(totalMinutes % 60);
                     
-                    // 处理分钟
                     if (newMinute >= 60) {
                         newMinute -= 60;
                         newHour += 1;
@@ -471,7 +430,6 @@
                         newHour -= 1;
                     }
                     
-                    // 处理小时
                     if (newHour >= 24) {
                         newHour -= 24;
                         newDay += 1;
@@ -480,7 +438,6 @@
                         newDay -= 1;
                     }
                     
-                    // 处理跨月
                     const date = new Date(Date.UTC(year, month - 1, newDay, newHour, newMinute));
                     newYear = date.getUTCFullYear();
                     newMonth = date.getUTCMonth() + 1;
@@ -488,7 +445,6 @@
                     newHour = date.getUTCHours();
                     newMinute = date.getUTCMinutes();
                     
-                    // 获取时辰
                     const shichen = this.getShichen(newHour);
                     
                     return {
@@ -526,7 +482,7 @@
                 },
                 
                 // 判断是否需要夏令时
-                shouldUseSummerTime: function(year, month, city) {
+                shouldUseSummerTime: function(year, month) {
                     if (year < 1986 || year > 1992) return false;
                     if (month >= 5 && month <= 8) return true;
                     if (month === 4) return true;
@@ -535,9 +491,8 @@
                 }
             };
             
-            // ==================== 八字分析引擎 ====================
+            // ==================== 八字分析引擎（200字以上详细版）====================
             const BaziAnalyzer = {
-                // 十神关系表
                 shishenMap: [
                     ['比肩', '劫财', '食神', '伤官', '偏财', '正财', '七杀', '正官', '偏印', '正印'],
                     ['劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀', '正印', '偏印'],
@@ -551,11 +506,9 @@
                     ['正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀']
                 ],
                 
-                // 五行对应关系
                 wuxingFromGan: ['木', '木', '火', '火', '土', '土', '金', '金', '水', '水'],
                 wuxingFromZhi: ['水', '土', '木', '木', '土', '火', '火', '土', '金', '金', '土', '水'],
                 
-                // 生克关系
                 shengMap: {'木':'火', '火':'土', '土':'金', '金':'水', '水':'木'},
                 keMap: {'木':'土', '火':'金', '土':'水', '金':'木', '水':'火'},
                 beikeMap: {'木':'金', '火':'水', '土':'木', '金':'火', '水':'土'},
@@ -572,7 +525,7 @@
                     return this.wuxingFromZhi[index];
                 },
                 
-                // 总论分析
+                // 1. 总论分析（300字）
                 analyzeSummary: function(dayGanName, dayWuXing, wuxingCount, shensha, gender, dayGanIndex) {
                     let text = `【命主总论】日主为<strong>${dayGanName}</strong>，五行属<strong>${dayWuXing}</strong>。`;
                     
@@ -626,7 +579,7 @@
                     return text;
                 },
                 
-                // 财运分析
+                // 2. 财运分析（300字）
                 analyzeWealth: function(dayWuXing, wuxingCount, shensha, dayGanIndex, monthGan, yearGan, hourGan) {
                     const wealthWx = this.keMap[dayWuXing];
                     const wealthCount = wuxingCount[wealthWx] || 0;
@@ -670,7 +623,7 @@
                     return text;
                 },
                 
-                // 事业分析
+                // 3. 事业分析（300字）
                 analyzeCareer: function(dayWuXing, wuxingCount, dayZhi, monthZhi, gender, dayGanIndex, monthGan, yearGan) {
                     const guanShaWx = this.beikeMap[dayWuXing];
                     const guanShaCount = wuxingCount[guanShaWx] || 0;
@@ -712,7 +665,7 @@
                     return text;
                 },
                 
-                // 婚姻分析
+                // 4. 婚姻分析（300字）
                 analyzeMarriage: function(dayGanName, dayZhi, shensha, gender, dayZhiIndex, dayGanIndex) {
                     const dayZhiName = dayZhi.getName();
                     const dayZhiWx = this.wuxingFromZhi[dayZhiIndex];
@@ -763,7 +716,7 @@
                     return text;
                 },
                 
-                // 子女分析
+                // 5. 子女分析（250字）
                 analyzeChildren: function(dayGanIndex, monthGan, hourGan, dayGanName) {
                     const foodShen = ['食神', '伤官'];
                     const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
@@ -801,7 +754,7 @@
                     return text;
                 },
                 
-                // 健康分析
+                // 6. 健康分析（300字）
                 analyzeHealth: function(dayWuXing, wuxingCount, shensha, dayGanName) {
                     let text = `【健康分析】日主五行属${dayWuXing}，代表命主的先天体质和易感疾病。`;
                     
@@ -847,7 +800,7 @@
                     return text;
                 },
                 
-                // 父母分析
+                // 7. 父母分析（250字）
                 analyzeParents: function(yearGan, monthGan, dayGanIndex, yearZhi, monthZhi) {
                     const yearShishen = this.getShiShen(dayGanIndex, yearGan.getIndex());
                     const monthShishen = this.getShiShen(dayGanIndex, monthGan.getIndex());
@@ -855,13 +808,13 @@
                     let text = `【父母分析】年柱为祖上，月柱为父母宫，代表父母和原生家庭。`;
                     
                     if (yearShishen.includes('印') || monthShishen.includes('印')) {
-                        text += ` 年月见印星（${yearShishen.includes('印') ? yearShishen : ''} ${monthShishen.includes('印') ? monthShishen : ''}），父母对命主助力较大，能得庇护。印星代表长辈、贵人，命主从小受到父母的关爱和教育，家庭氛围温馨，父母在学业和事业上给予支持。特别适合继承家族事业或从事父母相关的行业。`;
+                        text += ` 年月见印星，父母对命主助力较大，能得庇护。印星代表长辈、贵人，命主从小受到父母的关爱和教育，家庭氛围温馨，父母在学业和事业上给予支持。特别适合继承家族事业或从事父母相关的行业。`;
                     } else if (yearShishen.includes('财') || monthShishen.includes('财')) {
-                        text += ` 年月见财星（${yearShishen.includes('财') ? yearShishen : ''} ${monthShishen.includes('财') ? monthShishen : ''}），家庭经济条件较好，父母有能力。财星代表财富，命主出生在殷实之家，父母赚钱能力强，能提供良好的物质条件。但财星也代表父亲（对男命而言），父亲可能在命主成长过程中较为忙碌。`;
+                        text += ` 年月见财星，家庭经济条件较好，父母有能力。财星代表财富，命主出生在殷实之家，父母赚钱能力强，能提供良好的物质条件。但财星也代表父亲（对男命而言），父亲可能在命主成长过程中较为忙碌。`;
                     } else if (yearShishen.includes('官') || monthShishen.includes('官')) {
-                        text += ` 年月见官杀（${yearShishen.includes('官') ? yearShishen : ''} ${monthShishen.includes('官') ? monthShishen : ''}），父母有一定社会地位，对命主要求严格。官杀代表权力和规矩，父母可能是公务员、管理者或严父慈母类型，对命主期望高，教育严格，培养命主有责任心。`;
+                        text += ` 年月见官杀，父母有一定社会地位，对命主要求严格。官杀代表权力和规矩，父母可能是公务员、管理者或严父慈母类型，对命主期望高，教育严格，培养命主有责任心。`;
                     } else if (yearShishen.includes('食伤') || monthShishen.includes('食伤')) {
-                        text += ` 年月见食伤（${yearShishen.includes('食') || yearShishen.includes('伤') ? yearShishen : ''} ${monthShishen.includes('食') || monthShishen.includes('伤') ? monthShishen : ''}），父母开明，注重命主的个性发展。食伤代表才华和自由，父母不给孩子太多压力，鼓励发展兴趣爱好，家庭氛围轻松自由。`;
+                        text += ` 年月见食伤，父母开明，注重命主的个性发展。食伤代表才华和自由，父母不给孩子太多压力，鼓励发展兴趣爱好，家庭氛围轻松自由。`;
                     } else {
                         text += ` 年月十神为${yearShishen}、${monthShishen}，与父母缘分普通，需自己奋斗。命主可能较早独立，父母提供的助力有限，但也因此培养了独立自主的性格。`;
                     }
@@ -888,7 +841,7 @@
                     return text;
                 },
                 
-                // 田宅分析
+                // 8. 田宅分析（250字）
                 analyzeHouse: function(shensha, dayZhiWx, wuxingCount) {
                     let text = `【田宅房产分析】田宅宫看库与印，代表房产、居住环境和固定资产。`;
                     
@@ -930,7 +883,7 @@
                     return text;
                 },
                 
-                // 官非诉讼分析
+                // 9. 官非诉讼分析（250字）
                 analyzeLegal: function(shensha, guanShaCount, dayGanName) {
                     let text = `【官非诉讼分析】官非与刑冲破害相关，代表法律纠纷、是非口舌。`;
                     
@@ -965,7 +918,7 @@
                     return text;
                 },
                 
-                // 驿马外出分析
+                // 10. 驿马外出分析（250字）
                 analyzeTravel: function(shensha, yearZhiIndex, hourZhiIndex) {
                     let text = `【驿马外出分析】驿马星主奔波、旅行、迁移，代表外出发展的机会。`;
                     
@@ -1007,7 +960,7 @@
                     return text;
                 },
                 
-                // 性格分析
+                // 11. 性格分析（300字）
                 analyzePersonality: function(dayGanName, dayGanIndex, wuxingCount, dayZhiWx) {
                     let text = `【性格分析】日干为${dayGanName}，代表命主的核心性格。`;
                     
@@ -1067,7 +1020,7 @@
                     return text;
                 },
                 
-                // 大运建议
+                // 12. 大运建议（250字）
                 analyzeDayunAdvice: function(daYunArray, startAge, startYear, dayGanName) {
                     let text = `【大运流年建议】您于<strong>${startAge}</strong>岁起运，大运十年一换，运势循环往复。`;
                     
@@ -1152,7 +1105,7 @@
                         const year = parseInt(document.getElementById('year').value);
                         const month = parseInt(document.getElementById('month').value);
                         
-                        const shouldUse = TrueSolarTime.shouldUseSummerTime(year, month, '');
+                        const shouldUse = TrueSolarTime.shouldUseSummerTime(year, month);
                         document.getElementById('summerTime').value = shouldUse ? 'true' : 'false';
                         
                         const infoMsg = document.getElementById('summerTimeInfo');
@@ -1192,22 +1145,19 @@
                         }
                         
                         if (!city) {
-                            this.showError('请输入出生城市（用于真太阳时校正）');
+                            this.showError('请输入出生城市');
                             return;
                         }
                         
-                        // 检查Lunar是否加载
                         if (typeof Lunar === 'undefined' || !Lunar.Solar) {
-                            this.showError('命理库尚未加载完成，请稍后重试');
+                            this.showError('命理库加载中，请稍后重试');
                             return;
                         }
                         
                         try {
-                            // 计算真太阳时
                             const trueTime = TrueSolarTime.calculate(year, month, day, hour, minute, city, useSummerTime);
                             this.showTimeCorrection(trueTime);
                             
-                            // 使用校正后的时间排盘
                             const Solar = Lunar.Solar;
                             const solar = Solar.fromYmdHms(trueTime.year, trueTime.month, trueTime.day, trueTime.hour, trueTime.minute, 0);
                             const lunar = solar.getLunar();
@@ -1259,7 +1209,7 @@
                                 wuxingCount[wx]++;
                             });
                             
-                            // 渲染所有分析
+                            // 渲染所有分析（200字以上）
                             document.getElementById('summaryText').innerHTML = BaziAnalyzer.analyzeSummary(
                                 dayGan.getName(), 
                                 this.getWuXingFromGanIndex(dayGanIndex), 
@@ -1445,7 +1395,7 @@
                 initApp();
             });
             
-            // 如果Lunar已经加载（比如直接访问的情况）
+            // 如果Lunar已经加载
             if (typeof Lunar !== 'undefined' && Lunar.Solar) {
                 initApp();
             }
@@ -1569,7 +1519,7 @@
             <div class="analysis-block" style="margin-top:1rem;" id="dayunAdvice"></div>
         </div>
 
-        <!-- 12个详细分析板块 -->
+        <!-- 12个详细分析板块，每个200字以上 -->
         <div class="grid-2col">
             <div class="analysis-block">
                 <h3>🧬 总论</h3>
