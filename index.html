@@ -1323,28 +1323,42 @@ window.saveCurrentToFavorites = function() {
                 }
             };
             
-            // ---------- 手势滑动 ----------
-            function initSwipe() {
-                if (typeof Hammer === 'undefined') {
-                    console.warn('Hammer.js 未加载');
-                    return;
-                }
-                
-                const container = document.querySelector('.bazi-grid');
-                if (!container) return;
-                
-                try {
-                    const hammer = new Hammer(container);
-                    hammer.on('swipeleft', () => {
-                        container.scrollBy({ left: 300, behavior: 'smooth' });
-                    });
-                    hammer.on('swiperight', () => {
-                        container.scrollBy({ left: -300, behavior: 'smooth' });
-                    });
-                } catch (e) {
-                    console.warn('手势初始化失败', e);
-                }
-            }
+           // ---------- 手势滑动 ----------
+function initSwipe() {
+    const container = document.querySelector('.bazi-grid');
+    if (!container) return;
+    
+    // 检测是否为iOS设备
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    
+    if (isIOS) {
+        // iOS设备使用原生滚动 + CSS滚动吸附
+        container.style.WebkitOverflowScrolling = 'touch';
+        container.style.scrollSnapType = 'x mandatory';
+        
+        // 添加触摸提示
+        const indicator = document.querySelector('.swipe-indicator');
+        if (indicator) {
+            indicator.style.display = 'block';
+            indicator.innerHTML = '← 左右滑动卡片查看更多 →';
+        }
+    }
+    
+    // 如果Hammer.js可用，仍然添加手势（兼容安卓）
+    if (typeof Hammer !== 'undefined') {
+        try {
+            const hammer = new Hammer(container);
+            hammer.on('swipeleft', () => {
+                container.scrollBy({ left: 300, behavior: 'smooth' });
+            });
+            hammer.on('swiperight', () => {
+                container.scrollBy({ left: -300, behavior: 'smooth' });
+            });
+        } catch (e) {
+            console.warn('手势初始化失败', e);
+        }
+    }
+}
             
             // ---------- 模态框 ----------
             window.showTermDetail = function(term) {
