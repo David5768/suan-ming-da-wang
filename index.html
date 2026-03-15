@@ -4,27 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
     <title>紫微斗数·八字全息排盘 | 专业命理分析系统</title>
-    <!-- 使用稳定版本，去掉/dist/路径 -->
-    <script src="https://cdn.jsdelivr.net/npm/iztro@2.0.3/iztro.min.js"></script>
-    <!-- 备用CDN -->
-    <script>
-    if (typeof iztro === 'undefined') {
-        var backupUrls = [
-            'https://unpkg.com/iztro@2.0.3/iztro.min.js',
-            'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.3/iztro.min.js',
-            'https://cdn.jsdelivr.net/npm/iztro@2.0.5/iztro.min.js'
-        ];
-        
-        function tryLoad(urls) {
-            if (urls.length === 0) return;
-            var script = document.createElement('script');
-            script.src = urls[0];
-            script.onerror = function() { tryLoad(urls.slice(1)); };
-            document.head.appendChild(script);
-        }
-        tryLoad(backupUrls);
+    <!-- 主CDN - 使用验证过的版本和路径 -->
+<script src="https://cdn.jsdelivr.net/npm/iztro@2.0.5/dist/iztro.min.js"></script>
+
+<!-- 备用CDN -->
+<script>
+if (typeof iztro === 'undefined') {
+    var backupUrls = [
+        'https://unpkg.com/iztro@2.0.5/dist/iztro.min.js',
+        'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.5/iztro.min.js',
+        'https://cdn.jsdelivr.net/npm/iztro@2.0.3/dist/iztro.min.js'
+    ];
+    
+    function tryLoad(urls) {
+        if (urls.length === 0) return;
+        var script = document.createElement('script');
+        script.src = urls[0];
+        script.onerror = function() { tryLoad(urls.slice(1)); };
+        document.head.appendChild(script);
     }
-    </script>
+    tryLoad(backupUrls);
+}
+</script>
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.3.4/lunar.min.js"></script>
     <style>
         * {
