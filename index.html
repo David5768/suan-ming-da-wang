@@ -912,16 +912,22 @@
                 attempts++;
                 if (typeof iztro !== 'undefined' && typeof Lunar !== 'undefined') {
                     app.init();
-                } else if (attempts < 30) {
-                    setTimeout(checkLibraries, 200);
+                    document.getElementById('loadingMsg').style.display = 'none';
+                } else if (attempts < 120) {  // 120次 × 500ms = 60秒
+                    setTimeout(checkLibraries, 500);
+                    // 每10秒更新一次提示
+                    if (attempts % 20 === 0) {
+                        document.getElementById('loadingMsg').innerHTML = `⏳ 正在加载命理库，已等待${attempts/2}秒...`;
+                    }
                 } else {
                     document.getElementById('loadingMsg').style.display = 'none';
                     document.getElementById('errorMsg').style.display = 'block';
-                    document.getElementById('errorMsg').innerHTML = '⚠️ 资源加载超时，请检查网络或刷新页面重试。如果问题持续，可尝试使用公历模式。';
+                    document.getElementById('errorMsg').innerHTML = '⚠️ 资源加载超时（60秒），请检查网络后刷新重试';
                 }
             }
             checkLibraries();
-        })();
+
+        })();  // 这是最外层的结束
     </script>
 </body>
 </html>
