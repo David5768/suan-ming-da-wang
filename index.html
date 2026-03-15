@@ -858,7 +858,8 @@
                         const dayWx = wxGan[dayGanIdx];
                         const dayZhi = pillars.day.zhi;
                         const dayZhiIdx = dizhi.indexOf(dayZhi);
-                        const dayZhiWx = dayZhiIdx !== -1 ? wxGan[dayZhiIdx % 10] : '土';
+                        const wxZhi = ['水','土','木','木','土','火','火','土','金','金','土','水'];
+                        const dayZhiWx = dayZhiIdx !== -1 ? wxZhi[dayZhiIdx] : '土';
                         
                         const guanShaWx = keMap[dayWx];
                         const guanShaCnt = wxC[guanShaWx] || 0;
