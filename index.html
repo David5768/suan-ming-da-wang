@@ -1711,9 +1711,15 @@ window.saveCurrentToFavorites = function() {
             }
             
             // ---------- 纳音 ----------
-            function getNaYin(ganZhi) {
-                return NA_YIN[ganZhi] || '';
-            }
+           function getNaYin(ganZhi) {
+    // 增强版：如果找不到，在控制台输出警告
+    const result = NA_YIN[ganZhi];
+    if (!result) {
+        console.warn('未找到纳音:', ganZhi);
+        return '？';
+    }
+    return result;
+}
             
             // ---------- 五虎遁 ----------
             function getWuHuDun(yearGan, targetZhi) {
@@ -2100,11 +2106,26 @@ window.saveCurrentToFavorites = function() {
                                 const yearGan = TIAN_GAN[yearGanIndex >= 0 ? yearGanIndex : yearGanIndex + 10];
                                 const yearZhi = DI_ZHI[yearZhiIndex >= 0 ? yearZhiIndex : yearZhiIndex + 12];
                                 
-                                // 手动计算月柱（简化版，不考虑节气）
-                                const monthGanIndex = ((yearGanIndex + 1) * 2 + month) % 10;
-                                const monthZhiIndex = (month + 1) % 12;
-                                const monthGan = TIAN_GAN[monthGanIndex];
-                                const monthZhi = DI_ZHI[monthZhiIndex];
+                                // 手动计算月柱
+const monthZhiIndex = (month + 1) % 12;
+
+// 月干计算（五虎遁）
+let monthGanIndex;
+const currentYearGan = TIAN_GAN[yearGanIndex];  // ← 改为 currentYearGan
+if (currentYearGan === '甲' || currentYearGan === '己') {
+    monthGanIndex = (2 + month - 1) % 10; // 丙
+} else if (currentYearGan === '乙' || currentYearGan === '庚') {
+    monthGanIndex = (4 + month - 1) % 10; // 戊
+} else if (currentYearGan === '丙' || currentYearGan === '辛') {
+    monthGanIndex = (6 + month - 1) % 10; // 庚
+} else if (currentYearGan === '丁' || currentYearGan === '壬') {
+    monthGanIndex = (8 + month - 1) % 10; // 壬
+} else if (currentYearGan === '戊' || currentYearGan === '癸') {
+    monthGanIndex = (0 + month - 1) % 10; // 甲
+}
+
+const monthGan = TIAN_GAN[monthGanIndex];
+const monthZhi = DI_ZHI[monthZhiIndex];
                                 
                                 // 手动计算日柱（使用公式）
                                 const baseDate = new Date(1900, 0, 31);
@@ -2315,17 +2336,21 @@ for (let i = 0; i < 10; i++) {
                                 ? relations.map(r => `<span class="relation-tag" data-tooltip="地支关系">${r}</span>`).join('') 
                                 : '<span class="relation-tag">无特殊关系</span>';
                             
-                            // 纳音
-                            const nayinYear = getNaYin(pillars.year.gan + pillars.year.zhi);
-                            const nayinMonth = getNaYin(pillars.month.gan + pillars.month.zhi);
-                            const nayinDay = getNaYin(pillars.day.gan + pillars.day.zhi);
-                            const nayinHour = getNaYin(pillars.hour.gan + pillars.hour.zhi);
-                            document.getElementById('nayinContent').innerHTML = `
-                                <div class="detail-item"><span class="label">年柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.year.gan)]]}">${nayinYear}</span></div>
-                                <div class="detail-item"><span class="label">月柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.month.gan)]]}">${nayinMonth}</span></div>
-                                <div class="detail-item"><span class="label">日柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.day.gan)]]}">${nayinDay}</span></div>
-                                <div class="detail-item"><span class="label">时柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.hour.gan)]]}">${nayinHour}</span></div>
-                            `;
+                         // 纳音
+const nayinYear = getNaYin(pillars.year.gan + pillars.year.zhi);
+const nayinMonth = getNaYin(pillars.month.gan + pillars.month.zhi);
+const nayinDay = getNaYin(pillars.day.gan + pillars.day.zhi);
+const nayinHour = getNaYin(pillars.hour.gan + pillars.hour.zhi);
+
+// 强制显示月柱干支，方便排查
+const monthGanZhi = pillars.month.gan + pillars.month.zhi;
+
+document.getElementById('nayinContent').innerHTML = `
+    <div class="detail-item"><span class="label">年柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.year.gan)]]}">${nayinYear || '--'}</span></div>
+    <div class="detail-item"><span class="label">月柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.month.gan)]]}">${nayinMonth || monthGanZhi + '(无纳音)'}</span></div>
+    <div class="detail-item"><span class="label">日柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.day.gan)]]}">${nayinDay || '--'}</span></div>
+    <div class="detail-item"><span class="label">时柱纳音：</span><span class="value ${WX_COLOR[GAN_WUXING[TIAN_GAN.indexOf(pillars.hour.gan)]]}">${nayinHour || '--'}</span></div>
+`;
                             
                             // 空亡
                             const yearKong = getKongWang(pillars.year.gan, pillars.year.zhi);
