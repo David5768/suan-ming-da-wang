@@ -793,7 +793,7 @@ if (typeof iztro === 'undefined') {
     // 默认返回120°
     console.log(`未找到城市"${city}"的经度信息，使用默认值120°`);
     return 120.0;
-}
+},
                 
                 calculate(year, month, day, hour, minute, city, useSummerTime) {
                     const lon = this.getLongitude(city);
