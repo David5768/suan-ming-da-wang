@@ -264,56 +264,183 @@
         }
     </style>
     
-    <!-- 多CDN备用加载方案（使用稳定版本） -->
-    <script>
-    (function() {
-        // 使用稳定的CDN版本
-        var cdnList = [
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.4/dist/lunar.min.js",
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.3/dist/lunar.min.js",
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.2/dist/lunar.min.js",
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.7.1/dist/lunar.min.js",
-            "https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.0/dist/lunar.min.js"
-        ];
-        
-        async function tryLoadCDNs() {
-            for (var i = 0; i < cdnList.length; i++) {
-                try {
-                    console.log('尝试加载:', cdnList[i]);
-                    var script = document.createElement('script');
-                    script.src = cdnList[i];
-                    
-                    await new Promise(function(resolve, reject) {
-                        script.onload = resolve;
-                        script.onerror = reject;
-                        document.head.appendChild(script);
-                    });
-                    
-                    // 等待初始化
-                    await new Promise(r => setTimeout(r, 200));
-                    
-                    if (typeof Lunar !== 'undefined' && Lunar.Solar) {
-                        console.log('✅ Lunar库加载成功:', cdnList[i]);
-                        document.dispatchEvent(new Event('LunarReady'));
-                        return;
-                    }
-                } catch (e) {
-                    console.warn('❌ 加载失败:', cdnList[i]);
-                }
-            }
+   <!-- ==================== 超级CDN加载器（多源 + 多版本 + 重试）==================== -->
+<script>
+(function() {
+    // ==================== 配置区域 ====================
+    // 支持的CDN源（按可靠性排序）
+    const CDN_SOURCES = [
+        { name: 'jsDelivr', url: 'https://cdn.jsdelivr.net/npm/lunar-javascript@${version}/index.js' },
+        { name: 'unpkg', url: 'https://unpkg.com/lunar-javascript@${version}/index.js' },
+        { name: 'cdnjs', url: 'https://cdnjs.cloudflare.com/ajax/libs/lunar-javascript/${version}/lunar.min.js' },
+        { name: 'bootcdn', url: 'https://cdn.bootcdn.net/ajax/libs/lunar-javascript/${version}/lunar.min.js' }
+    ];
+    
+    // 要尝试的版本列表（从新到旧）
+    const VERSIONS = [
+        '1.7.5', '1.7.4', '1.7.3', '1.7.2', '1.7.1', '1.7.0',
+        '1.6.5', '1.6.4', '1.6.3', '1.6.2', '1.6.1', '1.6.0',
+        '1.5.9', '1.5.8', '1.5.7', '1.5.6', '1.5.5', '1.5.4',
+        '1.5.3', '1.5.2', '1.5.1', '1.5.0'
+    ];
+    
+    // 备用CDN（当主CDN全部失败时的最后手段）
+    const FALLBACK_URLS = [
+        'https://cdn.staticaly.com/gh/6tail/lunar-javascript/master/index.js',
+        'https://raw.githubusercontent.com/6tail/lunar-javascript/master/index.js'
+    ];
+    
+    // ==================== 加载逻辑 ====================
+    let loaded = false;
+    let currentSource = '';
+    let currentVersion = '';
+    
+    function log(message, type = 'info') {
+        const prefix = '🔮 [LunarLoader]';
+        if (type === 'success') console.log(`%c✅ ${prefix} ${message}`, 'color:green');
+        else if (type === 'error') console.log(`%c❌ ${prefix} ${message}`, 'color:red');
+        else if (type === 'warn') console.log(`%c⚠️ ${prefix} ${message}`, 'color:orange');
+        else console.log(`%cℹ️ ${prefix} ${message}`, 'color:blue');
+    }
+    
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            script.crossOrigin = 'anonymous';
+            document.head.appendChild(script);
+        });
+    }
+    
+    function checkLunarLoaded() {
+        return typeof Lunar !== 'undefined' && 
+               typeof Lunar.Solar !== 'undefined' && 
+               typeof Lunar.Solar.fromYmdHms === 'function';
+    }
+    
+    async function tryLoadFromSource(source, version) {
+        const url = source.url.replace('${version}', version);
+        try {
+            log(`尝试加载: ${source.name} v${version}`, 'info');
+            await loadScript(url);
+            // 等待一小段时间让库初始化
+            await new Promise(r => setTimeout(r, 200));
             
-            // 所有都失败
-            console.error('所有CDN均加载失败');
-            var errorMsg = document.getElementById('errorMsg');
-            if (errorMsg) {
-                errorMsg.style.display = 'block';
-                errorMsg.innerHTML = '无法加载命理库，请刷新页面重试';
+            if (checkLunarLoaded()) {
+                currentSource = source.name;
+                currentVersion = version;
+                log(`成功加载! 来源: ${source.name}, 版本: ${version}`, 'success');
+                return true;
+            }
+        } catch (e) {
+            log(`加载失败: ${source.name} v${version} - ${e.message}`, 'error');
+        }
+        return false;
+    }
+    
+    async function tryLoadAll() {
+        log('开始尝试加载Lunar库...', 'info');
+        
+        // ===== 第一阶段：按优先级尝试所有CDN和版本 =====
+        for (const source of CDN_SOURCES) {
+            for (const version of VERSIONS) {
+                if (loaded) return true;
+                if (await tryLoadFromSource(source, version)) {
+                    loaded = true;
+                    document.dispatchEvent(new CustomEvent('LunarReady', { 
+                        detail: { source: source.name, version: version } 
+                    }));
+                    return true;
+                }
+                // 短暂延迟避免请求过于频繁
+                await new Promise(r => setTimeout(r, 100));
             }
         }
         
-        tryLoadCDNs();
-    })();
-    </script>
+        // ===== 第二阶段：尝试备用CDN（直接链接到GitHub） =====
+        if (!loaded) {
+            log('尝试备用CDN...', 'warn');
+            for (const url of FALLBACK_URLS) {
+                try {
+                    log(`尝试备用: ${url}`, 'info');
+                    await loadScript(url);
+                    await new Promise(r => setTimeout(r, 200));
+                    
+                    if (checkLunarLoaded()) {
+                        log(`备用CDN加载成功: ${url}`, 'success');
+                        loaded = true;
+                        document.dispatchEvent(new CustomEvent('LunarReady', { 
+                            detail: { source: 'fallback', url: url } 
+                        }));
+                        return true;
+                    }
+                } catch (e) {
+                    log(`备用加载失败: ${url}`, 'error');
+                }
+            }
+        }
+        
+        // ===== 第三阶段：如果全部失败，显示友好提示 =====
+        if (!loaded) {
+            log('所有CDN均加载失败！', 'error');
+            const errorMsg = document.getElementById('errorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = `
+                    <strong>⚠️ 命理库加载失败</strong><br>
+                    我们尝试了所有CDN源和版本，但都无法加载。<br><br>
+                    您可以尝试：<br>
+                    1. 刷新页面重试<br>
+                    2. 切换网络环境（如使用手机热点）<br>
+                    3. 手动下载库文件并本地引用<br><br>
+                    如果您是站长，可以访问 <a href="https://github.com/6tail/lunar-javascript" target="_blank">GitHub仓库</a> 下载。
+                `;
+            }
+        }
+        
+        return false;
+    }
+    
+    // ==================== 启动加载 ====================
+    // 如果已经加载，直接触发事件
+    if (checkLunarLoaded()) {
+        log('Lunar库已存在', 'success');
+        document.dispatchEvent(new CustomEvent('LunarReady', { 
+            detail: { source: 'existing' } 
+        }));
+    } else {
+        // 开始尝试加载
+        tryLoadAll().catch(e => {
+            log(`加载过程出错: ${e.message}`, 'error');
+        });
+    }
+    
+    // 设置超时保护（30秒后如果还没加载成功，显示提示）
+    setTimeout(() => {
+        if (!loaded && !checkLunarLoaded()) {
+            log('加载超时', 'error');
+            const errorMsg = document.getElementById('errorMsg');
+            if (errorMsg) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerHTML = '加载超时，请刷新页面重试。';
+            }
+        }
+    }, 30000);
+})();
+</script>
+
+<!-- 监听加载完成事件 -->
+<script>
+document.addEventListener('LunarReady', function(e) {
+    console.log('🎉 Lunar库就绪，详细信息:', e.detail);
+    // 这里调用您的初始化函数
+    if (typeof initApp === 'function') {
+        initApp();
+    }
+});
+</script>
     
     <script>
         (function() {
