@@ -1100,7 +1100,10 @@
                             
                             // 显示神煞标签
                             const shenshaTags = document.getElementById('shenshaTags');
-                            shenshaTags.innerHTML = shensha.map(s => `<span class="shensha-tag">${s}</span>`).join('');
+                            const safeShensha = Array.isArray(shensha) ? shensha : [];
+shenshaTags.innerHTML = safeShensha.length > 0 
+    ? safeShensha.map(s => `<span class="shensha-tag">${s}</span>`).join('')
+    : '<span class="shensha-tag">无神煞</span>';
                             
                             // 大运数据
                             const dayunBody = document.getElementById('dayunBody');
