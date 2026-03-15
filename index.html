@@ -5,16 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
     <title>紫微斗数·八字全息排盘 | 专业命理分析系统</title>
     <!-- 主CDN - 使用验证过的版本和路径 -->
-<script src="https://unpkg.com/iztro@2.0.5/dist/iztro.min.js"></script>
+<script src="https://unpkg.com/iztro@2.0.6/dist/iztro.min.js"></script>
 
-<!-- 备用CDN -->
 <!-- 备用CDN -->
 <script>
 if (typeof iztro === 'undefined') {
     var backupUrls = [
-        'https://cdn.jsdelivr.net/npm/iztro@2.0.5/dist/iztro.min.js',
-        'https://cdn.bootcdn.net/ajax/libs/iztro/2.0.5/iztro.min.js',  // bootcdn可能不需要/dist/
-        'https://unpkg.com/iztro@2.0.3/dist/iztro.min.js'
+        'https://unpkg.com/iztro@2.0.6/dist/iztro.min.js',
+        'https://cdn.jsdelivr.net/npm/iztro@2.0.6/dist/iztro.min.js',
     ];
     
     function tryLoad(urls) {
@@ -1063,130 +1061,190 @@ if (typeof iztro === 'undefined') {
                                 <span style="color:#c2410c;font-size:1.1rem;">真太阳时：${trueTime.year}年${trueTime.month}月${trueTime.day}日 ${trueTime.hour.toString().padStart(2,'0')}:${trueTime.minute.toString().padStart(2,'0')} (${trueTime.shichen})</span>
                             `;
                             
-                            // 调用iztro排盘
-                            if (typeof iztro === 'undefined') throw new Error('命理库加载失败，请刷新页面');
-                            
-                            const dateStr = `${trueTime.year}-${trueTime.month.toString().padStart(2,'0')}-${trueTime.day.toString().padStart(2,'0')}`;
-                            let astro;
-                            try {
-                                astro = iztro.astro.bySolar(dateStr, trueTime.shichenName, gender === 'male' ? '男' : '女', false, 'zh-CN');
-                            } catch (e) {
-                                throw new Error('iztro排盘失败：' + e.message);
-                            }
-                            
-                            if (!astro || !astro.fourPillar) {
-                                throw new Error('排盘失败，请检查输入数据');
-                            }
-                            
-                            const bazi = astro.fourPillar;
-                            if (!Array.isArray(bazi) || bazi.length < 4) {
-                                throw new Error('八字数据格式错误');
-                            }
-                            
-                            const pillars = {
-                                year: { gan: bazi[0]?.[0] || '', zhi: bazi[0]?.[1] || '' },
-                                month: { gan: bazi[1]?.[0] || '', zhi: bazi[1]?.[1] || '' },
-                                day: { gan: bazi[2]?.[0] || '', zhi: bazi[2]?.[1] || '' },
-                                hour: { gan: bazi[3]?.[0] || '', zhi: bazi[3]?.[1] || '' }
-                            };
-                            
-                            // 更新四柱显示
-                            document.getElementById('yearGanZhi').innerText = (pillars.year.gan + pillars.year.zhi) || '--';
-                            document.getElementById('monthGanZhi').innerText = (pillars.month.gan + pillars.month.zhi) || '--';
-                            document.getElementById('dayGanZhi').innerText = (pillars.day.gan + pillars.day.zhi) || '--';
-                            document.getElementById('hourGanZhi').innerText = (pillars.hour.gan + pillars.hour.zhi) || '--';
-                            
-                            document.getElementById('yearShiShen').innerText = getShiShen(pillars.day.gan, pillars.year.gan) || '年';
-                            document.getElementById('monthShiShen').innerText = getShiShen(pillars.day.gan, pillars.month.gan) || '月';
-                            document.getElementById('dayShiShen').innerText = '日元';
-                            document.getElementById('hourShiShen').innerText = getShiShen(pillars.day.gan, pillars.hour.gan) || '时';
-                            
-                            // 计算五行分数
-                            const wxScore = calculateWuXingScore(pillars);
-                            
-                            // 显示五行条
-                            const wuxingBars = document.getElementById('wuxingBars');
-                            wuxingBars.innerHTML = '';
-                            
-                            for (let wx in wxScore) {
-                                const score = wxScore[wx] || 0;
-                                const div = document.createElement('div');
-                                div.className = 'wuxing-item';
-                                div.innerHTML = `
-                                    <span style="font-weight:600;width:30px;">${wx}</span>
-                                    <progress value="${score}" max="8"></progress>
-                                    <span style="min-width:45px;">${score.toFixed(1)}分</span>
-                                `;
-                                wuxingBars.appendChild(div);
-                            }
-                            
-                            // 计算神煞
-                            const shensha = calculateShenSha(pillars);
-                            
-                            // 显示神煞标签
-                            const shenshaTags = document.getElementById('shenshaTags');
-                            const safeShensha = Array.isArray(shensha) ? shensha : [];
-                            shenshaTags.innerHTML = safeShensha.length > 0 
-                                ? safeShensha.map(s => `<span class="shensha-tag">${escapeHtml(s)}</span>`).join('')
-                                : '<span class="shensha-tag">无神煞</span>';
-                            
-                            // 大运数据
-                            const dayunBody = document.getElementById('dayunBody');
-                            dayunBody.innerHTML = '';
-                            
-                            if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
-                                astro.daYun.forEach((dy, index) => {
-                                    if (!dy) return;
-                                    const ganzhi = dy.ganZhi || dy.ganzhi || this.getDefaultGanZhi(index);
-                                    const startAge = dy.startAge || dy.start_age || (index * 10 + 8);
-                                    const startYear = dy.startYear || dy.start_year || (trueTime.year + (startAge - 1));
-                                    
-                                    const tr = document.createElement('tr');
-                                    tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
-                                    dayunBody.appendChild(tr);
-                                });
-                            } else {
-                                dayunBody.innerHTML = '<tr><td colspan="3">暂无大运数据</td></tr>';
-                            }
-                            
-                            // 流年标签
-                            const currentYear = new Date().getFullYear();
-                            const liunianTags = document.getElementById('liunianTags');
-                            liunianTags.innerHTML = '';
-                            
-                            for (let i = 0; i < 10; i++) {
-                                const year = currentYear + i;
-                                const tag = document.createElement('span');
-                                tag.className = 'shensha-tag';
-                                tag.style.background = '#e6f0ff';
-                                tag.innerText = year + '年';
-                                liunianTags.appendChild(tag);
-                            }
-                            
-                            // 生成分析
-                            const analysis = generateFortuneAnalysis(pillars, wxScore, shensha);
-                            
-                            // 更新分析文本
-                            document.getElementById('summaryText').innerText = analysis.summary;
-                            document.getElementById('wealthText').innerText = analysis.wealth;
-                            document.getElementById('careerText').innerText = analysis.career;
-                            document.getElementById('marriageText').innerText = analysis.marriage;
-                            document.getElementById('childrenText').innerText = analysis.children;
-                            document.getElementById('healthText').innerText = analysis.health;
-                            document.getElementById('parentsText').innerText = analysis.parents;
-                            document.getElementById('houseText').innerText = analysis.house;
-                            document.getElementById('legalText').innerText = analysis.legal;
-                            document.getElementById('travelText').innerText = analysis.travel;
-                            document.getElementById('personalityText').innerText = analysis.personality;
-                            document.getElementById('virtueText').innerText = analysis.virtue;
-                            
-                            // 显示所有结果
-                            document.getElementById('baziGrid').style.display = 'grid';
-                            document.getElementById('wuxingCard').style.display = 'block';
-                            document.getElementById('dayunCard').style.display = 'block';
-                            document.getElementById('analysisGrid').style.display = 'grid';
-                            
-                            errorInfo.style.display = 'none';
+                           // 在调用前添加
+console.log('iztro版本:', iztro.version); // 检查版本
+console.log('可用方法:', Object.keys(iztro.astro)); // 看有哪些方法
+
+// 替换原来的调用代码
+const dateStr = `${trueTime.year}-${trueTime.month.toString().padStart(2,'0')}-${trueTime.day.toString().padStart(2,'0')}`;
+let astro;
+try {
+    console.log('尝试使用 byLunar 方法');
+    // 尝试第一种方式：使用时辰索引和中文语言
+astro = iztro.astro.bySolar(dateStr, trueTime.hourIndex, gender === 'male' ? '男' : '女', false, 'zh-CN');
+
+if (!astro) {
+    console.log('尝试第二种方式：使用时辰名称');
+    astro = iztro.astro.bySolar(dateStr, trueTime.shichenName, gender === 'male' ? '男' : '女', false);
+}
+
+if (!astro) {
+    console.log('尝试第三种方式：使用农历方式');
+    astro = iztro.astro.byLunar(dateStr, trueTime.hourIndex, gender === 'male' ? '男' : '女', false, 'zh-CN');
+}
+    
+} catch (e) {
+    console.error('iztro原始错误:', e);
+    throw new Error('iztro排盘失败：' + e.message);
+}
+// 检查返回的数据结构
+console.log('astro 完整对象:', astro);
+console.log('astro 的 keys:', Object.keys(astro));
+
+// 从 rawDates.chineseDate 获取八字
+let pillars; // 先在外部声明变量
+
+if (astro && astro.rawDates && astro.rawDates.chineseDate) {
+    const cd = astro.rawDates.chineseDate;
+    const bazi = [
+        cd.yearly,   // 年柱
+        cd.monthly,  // 月柱
+        cd.daily,    // 日柱
+        cd.hourly    // 时柱
+    ];
+    console.log('提取的八字:', bazi);
+    
+    if (!Array.isArray(bazi) || bazi.length < 4) {
+        throw new Error('八字数据格式错误');
+    }
+    
+    // 给 pillars 赋值
+    pillars = {
+        year: { gan: bazi[0][0], zhi: bazi[0][1] },
+        month: { gan: bazi[1][0], zhi: bazi[1][1] },
+        day: { gan: bazi[2][0], zhi: bazi[2][1] },
+        hour: { gan: bazi[3][0], zhi: bazi[3][1] }
+    };
+    
+    // 更新四柱显示
+    document.getElementById('yearGanZhi').innerText = (pillars.year.gan + pillars.year.zhi) || '--';
+    document.getElementById('monthGanZhi').innerText = (pillars.month.gan + pillars.month.zhi) || '--';
+    document.getElementById('dayGanZhi').innerText = (pillars.day.gan + pillars.day.zhi) || '--';
+    document.getElementById('hourGanZhi').innerText = (pillars.hour.gan + pillars.hour.zhi) || '--';
+    
+    document.getElementById('yearShiShen').innerText = getShiShen(pillars.day.gan, pillars.year.gan) || '年';
+    document.getElementById('monthShiShen').innerText = getShiShen(pillars.day.gan, pillars.month.gan) || '月';
+    document.getElementById('dayShiShen').innerText = '日元';
+    document.getElementById('hourShiShen').innerText = getShiShen(pillars.day.gan, pillars.hour.gan) || '时';
+    
+    // 计算五行分数
+    const wxScore = calculateWuXingScore(pillars);
+    
+    // 显示五行条
+    const wuxingBars = document.getElementById('wuxingBars');
+    wuxingBars.innerHTML = '';
+    
+    for (let wx in wxScore) {
+        const score = wxScore[wx] || 0;
+        const div = document.createElement('div');
+        div.className = 'wuxing-item';
+        div.innerHTML = `
+            <span style="font-weight:600;width:30px;">${wx}</span>
+            <progress value="${score}" max="8"></progress>
+            <span style="min-width:45px;">${score.toFixed(1)}分</span>
+        `;
+        wuxingBars.appendChild(div);
+    }
+    
+    // 计算神煞
+    const shensha = calculateShenSha(pillars);
+    
+    // 显示神煞标签
+    const shenshaTags = document.getElementById('shenshaTags');
+    const safeShensha = Array.isArray(shensha) ? shensha : [];
+    shenshaTags.innerHTML = safeShensha.length > 0 
+        ? safeShensha.map(s => `<span class="shensha-tag">${escapeHtml(s)}</span>`).join('')
+        : '<span class="shensha-tag">无神煞</span>';
+    
+   // 大运数据
+const dayunBody = document.getElementById('dayunBody');
+dayunBody.innerHTML = '';
+
+// 尝试多种可能的大运数据来源
+let daYunData = null;
+if (astro.daYun && Array.isArray(astro.daYun) && astro.daYun.length > 0) {
+    daYunData = astro.daYun;
+} else if (astro.horoscope && astro.horoscope.decadals) {
+    // 大运可能在 horoscope.decadals 里
+    daYunData = astro.horoscope.decadals;
+} else if (astro.decadal) {
+    // 或者直接在 decadal 属性里
+    daYunData = [astro.decadal];
+}
+
+if (daYunData && daYunData.length > 0) {
+    daYunData.forEach((dy, index) => {
+        if (!dy) return;
+        const ganzhi = dy.ganZhi || dy.ganzhi || dy.heavenlyStem + dy.earthlyBranch || this.getDefaultGanZhi(index);
+        const startAge = dy.startAge || dy.start_age || dy.range?.[0] || (index * 10 + 8);
+        const startYear = dy.startYear || dy.start_year || (trueTime.year + (startAge - 1));
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(ganzhi)}</td><td>${startAge}岁</td><td>${startYear}年</td>`;
+        dayunBody.appendChild(tr);
+    });
+} else {
+    // 如果还是没有数据，生成示例大运（基于当前八字）
+    const dayGan = pillars.day.gan;
+    const dayGanIdx = TIAN_GAN.indexOf(dayGan);
+    const genderNum = gender === 'male' ? 1 : 0;
+    const startAge = 8; // 默认8岁起运
+    
+    for (let i = 0; i < 8; i++) {
+        const ganIndex = (dayGanIdx + (genderNum === 1 ? i + 1 : -i - 1) + 100) % 10;
+        const zhiIndex = (i * 2) % 12;
+        const ganzhi = TIAN_GAN[ganIndex] + DI_ZHI[zhiIndex];
+        const age = startAge + i * 10;
+        const year = trueTime.year + age - 1;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${ganzhi}</td><td>${age}岁</td><td>${year}年</td>`;
+        dayunBody.appendChild(tr);
+    }
+}
+    
+    // 流年标签
+    const currentYear = new Date().getFullYear();
+    const liunianTags = document.getElementById('liunianTags');
+    liunianTags.innerHTML = '';
+    
+    for (let i = 0; i < 10; i++) {
+        const year = currentYear + i;
+        const tag = document.createElement('span');
+        tag.className = 'shensha-tag';
+        tag.style.background = '#e6f0ff';
+        tag.innerText = year + '年';
+        liunianTags.appendChild(tag);
+    }
+    
+    // 生成分析
+const analysis = generateFortuneAnalysis(pillars, wxScore, shensha);
+
+// 更新分析文本
+document.getElementById('summaryText').innerText = analysis.summary;
+document.getElementById('wealthText').innerText = analysis.wealth;
+document.getElementById('careerText').innerText = analysis.career;
+document.getElementById('marriageText').innerText = analysis.marriage;
+document.getElementById('childrenText').innerText = analysis.children;
+document.getElementById('healthText').innerText = analysis.health;
+document.getElementById('parentsText').innerText = analysis.parents;
+document.getElementById('houseText').innerText = analysis.house;
+document.getElementById('legalText').innerText = analysis.legal;
+document.getElementById('travelText').innerText = analysis.travel;
+document.getElementById('personalityText').innerText = analysis.personality;
+document.getElementById('virtueText').innerText = analysis.virtue;
+
+// 显示所有结果
+document.getElementById('baziGrid').style.display = 'grid';
+document.getElementById('wuxingCard').style.display = 'block';
+document.getElementById('dayunCard').style.display = 'block';
+document.getElementById('analysisGrid').style.display = 'grid';
+
+errorInfo.style.display = 'none';
+    
+} else {
+    throw new Error('无法获取八字数据');
+}
                             
                         } catch (e) {
                             console.error('排盘错误:', e);
